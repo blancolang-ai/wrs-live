@@ -101,3 +101,26 @@ test('histórico: solo se archiva un rally final; DELETE /data no lo borra; se p
   list = await (await fetch(API + '/archive')).json();
   assert.ok(!list.rallies.some(r => r.slug === 'rally-archivo-2-feb'));
 });
+
+test('histórico: temporada, dateKey, podium R1/R2 y orden por temporada y fecha', async () => {
+  const a = synth(); a.rally = 'Rally Alfa'; a.date = '10 ene'; a.season = 2026;
+  const b = synth(); b.rally = 'Rally Beta'; b.date = '20 dic'; b.season = 2025;
+  const c = synth(); c.rally = 'Rally Gamma'; c.date = '5 feb'; c.season = 2026;
+  assert.equal((await up(a)).status, 200); await wait(2100);
+  assert.equal((await up(b)).status, 200); await wait(2100);
+  assert.equal((await up(c)).status, 200); await wait(2100);
+  const list = await (await fetch(API + '/archive', { headers: { Origin: ORIGIN } })).json();
+  const wanted = ['rally-gamma-5-feb', 'rally-alfa-10-ene', 'rally-beta-20-dic'];
+  const got = list.rallies.filter(r => wanted.includes(r.slug)).map(r => r.slug);
+  assert.deepEqual(got, wanted);
+  const g = list.rallies.find(r => r.slug === 'rally-gamma-5-feb');
+  assert.equal(g.season, 2026);
+  assert.equal(g.dateKey, '2026-02-05');
+  assert.equal(g.podiums.Rally1.length, 3);
+  assert.equal(g.podiums.Rally2.length, 2);
+  assert.equal(g.podiums.Rally1[0].dorsal, g.winner.dorsal);
+  assert.ok(g.podiums.Rally1[0].nombre);
+  const beta = list.rallies.find(r => r.slug === 'rally-beta-20-dic');
+  assert.equal(beta.season, 2025);
+  assert.equal(beta.dateKey, '2025-12-20');
+});

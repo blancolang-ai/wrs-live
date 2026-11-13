@@ -51,6 +51,7 @@ function sheet({ tcs = [['TC1 Uno 10 km', 'TC2 Dos 5 km'], ['TC3 Tres 8 km (Made
 test('lee secciones, tramos, km, superficie, power stage, C/T, penalizaciones y fecha', () => {
   const { data, warnings } = P.parse(book(sheet()));
   assert.equal(data.rally, 'Rally Prueba'); assert.equal(data.venue, 'Pista Sintética'); assert.equal(data.date, '9 dic');
+  assert.equal(data.season, 2025); // año del serial Excel 46000 (9 dic 2025)
   assert.deepEqual(data.tramos.map(t => [t.id, t.name, t.km, t.ps, t.surf, t.sec]), [['TC1', 'Uno', 10, false, null, 0], ['TC2', 'Dos', 5, false, null, 0], ['TC3', 'Tres', 8, true, 'Madera', 1]]);
   assert.deepEqual(data.cats, ['Rally1', 'Rally2']);
   const ana = data.pilotos.find(p => p.nombre === 'Ana'), bea = data.pilotos.find(p => p.nombre === 'Bea'), ciro = data.pilotos.find(p => p.dorsal === 7);
@@ -236,4 +237,27 @@ test('avisa si hay tiempo en el tramo de la 4ª incidencia (la web lo trata como
   const w = warnings.filter(x => /4ª incidencia/.test(x));
   assert.equal(w.length, 1);
   assert.match(w[0], /Dorsal 1: tiempo en TC4 con la 4ª incidencia \(abandono\); la web no lo cuenta/);
+});
+
+test('temporada: año de la fecha si no hay campo de temporada', () => {
+  const { data } = P.parse(book(sheet()));
+  assert.equal(data.season, 2025);
+});
+test('temporada: pestaña «Temporada 2026» del libro tiene prioridad sobre el año de la fecha', () => {
+  const { data } = P.parse(book(sheet(), { sheets: ['Temporada 2026', 'Rally Prueba', 'Plantilla'], bodies: { 'Temporada 2026': [['Puntuaciones WRSlot Cantabria Temporada 2026']], 'Rally Prueba': sheet(), 'Plantilla': [] } }));
+  assert.equal(data.date, '9 dic');
+  assert.equal(data.season, 2026);
+});
+test('temporada: un encabezado «Temporada 2027» en la hoja gana a la pestaña y a la fecha', () => {
+  const rows = sheet();
+  rows[0][0] = 'WRSlot Cantabria Temporada 2027';
+  const { data } = P.parse(book(rows, { sheets: ['Temporada 2026', 'Rally Prueba', 'Plantilla'], bodies: { 'Temporada 2026': [['Puntuaciones']], 'Rally Prueba': rows, 'Plantilla': [] } }));
+  assert.equal(data.season, 2027);
+});
+test('temporada: sin fecha ni pestaña ni encabezado no se añade el campo', () => {
+  const rows = sheet();
+  rows[1] = ['Pista Sintética', null, null, 'Indidencia'];
+  const { data } = P.parse(book(rows));
+  assert.equal(data.date, '');
+  assert.equal(data.season, undefined);
 });

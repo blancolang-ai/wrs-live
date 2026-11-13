@@ -3,6 +3,14 @@ const fail = m => { throw new Error(m); };
 const str = (v, max, name) => { if (v == null) return null; if (typeof v !== 'string') fail(name + ' no es texto'); return v.slice(0, max); };
 const num = (v, name) => { if (v == null) return null; if (typeof v !== 'number' || !Number.isFinite(v)) fail(name + ' no es número'); return v; };
 const arr = (v, max, name) => { if (!Array.isArray(v)) fail(name + ' no es lista'); if (v.length > max) fail(name + ': demasiados elementos'); return v; };
+const seasonYear = v => {
+  if (v == null || v === '') return null;
+  const n = typeof v === 'number' ? v : (typeof v === 'string' && /^\d{4}$/.test(v.trim()) ? Number(v.trim()) : null);
+  if (typeof n !== 'number' || !Number.isFinite(n)) fail('season no es número');
+  const y = Math.round(n);
+  if (y < 2000 || y > 2100) fail('season fuera de rango');
+  return y;
+};
 export function sanitize(b) {
   if (!b || typeof b !== 'object' || Array.isArray(b)) fail('cuerpo no es objeto');
   const sections = arr(b.sections, 20, 'sections').map((s, i) => ({
@@ -30,8 +38,10 @@ export function sanitize(b) {
     };
   });
   if (new Set(pilotos.map(p => p.dorsal)).size !== pilotos.length) fail('dorsales repetidos');
+  const season = seasonYear(b.season);
   return {
     format: 1, champ: str(b.champ, 80, 'champ'), rally: str(b.rally, 80, 'rally') || 'Rally', venue: str(b.venue, 80, 'venue'), date: str(b.date, 20, 'date'),
+    ...(season != null ? { season } : {}),
     sections, tramos, pilotos, cats: arr(b.cats || ['Rally1'], 6, 'cats').map(c => str(c, 20, 'cat')),
     dayLabels: arr(b.dayLabels || [], 10, 'dayLabels').map(d => ({ short: str(d.short, 6, 'short') || '', long: str(d.long, 40, 'long') || '' }))
   };

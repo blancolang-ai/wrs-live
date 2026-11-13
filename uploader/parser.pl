@@ -331,6 +331,13 @@ sub fit_worker {
   $data->{rally} = clip($data->{rally}, 80);
   $data->{venue} = defined $data->{venue} ? clip($data->{venue}, 80) : $data->{venue};
   $data->{date} = clip($data->{date} || '', 20);
+  if (exists $data->{season} && defined $data->{season} && $data->{season} ne '') {
+    my $sy = as_num($data->{season});
+    if (defined $sy && $sy >= 2000 && $sy <= 2100) { $data->{season} = int($sy + ($sy >= 0 ? 0.5 : -0.5)); }
+    else { delete $data->{season}; }
+  } else {
+    delete $data->{season} if exists $data->{season};
+  }
   if (@{ $data->{cats} } > 6) { push @$warn, 'Demasiadas categorías; se suben las 6 primeras'; @{ $data->{cats} } = @{ $data->{cats} }[0 .. 5]; }
   $data->{cats} = [ map { clip($_, 20) } @{ $data->{cats} } ];
   if (@{ $data->{dayLabels} } > 10) { @{ $data->{dayLabels} } = @{ $data->{dayLabels} }[0 .. 9]; }
@@ -438,6 +445,43 @@ sub _cell {
   return undef if $c < 0 || $r < 0;
   return undef unless $rows->[$r];
   return $rows->[$r][$c];
+}
+
+
+sub season_year {
+  my ($s) = @_;
+  return undef unless defined $s && !ref($s);
+  return 0 + $1 if $s =~ /temporada\s*[:.\-]?\s*(20\d{2})/i;
+  return undef;
+}
+sub season_from_rows {
+  my ($rows, $sheet_name) = @_;
+  my $y = season_year($sheet_name);
+  return $y if defined $y;
+  my $n = @$rows < 25 ? $#$rows : 24;
+  for my $r (0 .. $n) {
+    my $row = $rows->[$r] || [];
+    for my $c (0 .. $#$row) {
+      my $v = $row->[$c];
+      next unless is_str($v);
+      $y = season_year($v);
+      return $y if defined $y;
+    }
+  }
+  return undef;
+}
+sub season_from_book {
+  my ($getXml) = @_;
+  my $wb = $getXml->('xl/workbook.xml');
+  return undef unless defined $wb && $wb ne '';
+  my @years;
+  for my $n (list_sheets($wb)) {
+    my $y = season_year($n);
+    push @years, $y if defined $y;
+  }
+  return undef unless @years;
+  @years = sort { $b <=> $a } @years;
+  return $years[0];
 }
 
 sub parse {
@@ -740,6 +784,8 @@ sub parse {
       push @dayLabels, { short => 'D' . $d, long => 'Día ' . $d };
     }
   }
+  my $season = season_from_rows($rows, $sheet->{name}) // season_from_book($getXml);
+  $season = $date->{y} if !defined $season && $date;
   my $data = {
     format => 1,
     champ => ($opts->{champ} || 'WRSlot Cantabria'),
@@ -752,6 +798,7 @@ sub parse {
     cats => \@cats,
     dayLabels => \@dayLabels,
   };
+  $data->{season} = 0 + $season if defined $season;
   fit_worker($data, \@warn);
   my $times2 = 0;
   for my $p (@{ $data->{pilotos} }) { $times2 += scalar keys %{ $p->{t} }; }

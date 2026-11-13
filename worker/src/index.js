@@ -7,7 +7,7 @@
 //   DELETE /archive/<slug> (X-Upload-Key)    -> quita un rally del histórico
 import { DurableObject } from 'cloudflare:workers';
 import { sanitize } from './validate.js';
-import { archiveSlug, isRallyFinal, winnerSummary, isValidSlug, indexEntry } from './archive.js';
+import { archiveSlug, isRallyFinal, winnerSummary, isValidSlug, indexEntry, needsHydrate, publicIndex, sortIndex } from './archive.js';
 
 const MAX_BYTES = 256 * 1024;
 const te = new TextEncoder();
@@ -112,7 +112,21 @@ export class Store extends DurableObject {
   }
   async listArchive() {
     const idx = (await this.ctx.storage.get('archiveIndex')) || [];
-    return idx.map(e => ({ slug: e.slug, name: e.name, date: e.date, winner: e.winner || null }));
+    let dirty = false;
+    const next = [];
+    for (const e of idx) {
+      if (needsHydrate(e)) {
+        const item = await this.ctx.storage.get('archive:' + e.slug);
+        if (item && item.data) {
+          next.push(indexEntry(e.slug, item.data, e.winner || winnerSummary(item.data), e.at || item.at));
+          dirty = true;
+          continue;
+        }
+      }
+      next.push(e);
+    }
+    if (dirty) await this.ctx.storage.put('archiveIndex', next);
+    return sortIndex(next).map(publicIndex);
   }
   async readArchive(slug) { return (await this.ctx.storage.get('archive:' + slug)) || null; }
   async deleteArchive(slug) {

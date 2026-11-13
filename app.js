@@ -401,6 +401,48 @@ async function syncRoute() {
   else if (S.archive) leaveArchive();
 }
 function closeHist() { $('hist').classList.remove('on'); }
+function groupHist(list) {
+  const map = new Map();
+  for (const e of list) {
+    const y = e.season == null ? null : e.season;
+    if (!map.has(y)) map.set(y, []);
+    map.get(y).push(e);
+  }
+  const keys = [...map.keys()].sort((a, b) => (b == null ? -1 : b) - (a == null ? -1 : a));
+  return keys.map(y => ({
+    season: y,
+    items: map.get(y).slice().sort((a, b) => {
+      const da = a.dateKey || '', db = b.dateKey || '';
+      if (db !== da) return db < da ? -1 : db > da ? 1 : 0;
+      return String(a.name || '').localeCompare(String(b.name || ''), 'es');
+    })
+  }));
+}
+function podRow(cat, rows) {
+  if (!rows || !rows.length) return '';
+  const cls = cat === 'Rally2' ? 'R2' : (cat === 'Rally1' ? 'R1' : 'X');
+  const lab = cat === 'Rally1' ? 'R1' : cat === 'Rally2' ? 'R2' : esc(cat);
+  const ps = rows.map(p => `<span class="pod-p"><i>${esc(String(p.dorsal))}</i> ${esc(p.nombre || '')}</span>`).join('');
+  return `<div class="pod-row ${cls}"><span class="pod-lab">${lab}</span>${ps}</div>`;
+}
+function renderHistList(list) {
+  const groups = groupHist(list);
+  const nowY = new Date().getFullYear();
+  const openY = groups.some(g => g.season === nowY) ? nowY : groups[0].season;
+  return groups.map(g => {
+    const title = g.season != null ? 'Temporada ' + g.season : 'Sin temporada';
+    const open = g.season === openY ? ' open' : '';
+    const items = g.items.map(e => {
+      const pods = e.podiums || {};
+      const rows = [];
+      if (pods.Rally1) rows.push(podRow('Rally1', pods.Rally1));
+      if (pods.Rally2) rows.push(podRow('Rally2', pods.Rally2));
+      Object.keys(pods).forEach(k => { if (k !== 'Rally1' && k !== 'Rally2') rows.push(podRow(k, pods[k])); });
+      return `<button type="button" class="hist-item" data-slug="${esc(e.slug)}"><b>${esc(e.name || e.slug)}</b><small>${esc(e.date || '')}</small><div class="pod">${rows.join('')}</div></button>`;
+    }).join('');
+    return `<details class="hist-season"${open}><summary>${esc(title)}</summary>${items}</details>`;
+  }).join('');
+}
 async function openHist() {
   const box = $('hist-list');
   box.innerHTML = '<div class="empty-h">Cargando…</div>';
@@ -411,10 +453,7 @@ async function openHist() {
     const j = await r.json();
     const list = (j && j.rallies) || [];
     if (!list.length) { box.innerHTML = '<div class="empty-h">Todavía no hay rallies terminados en el histórico.</div>'; return; }
-    box.innerHTML = list.map(e => {
-      const w = e.winner && e.winner.nombre ? ' · ' + esc(e.winner.nombre) : '';
-      return `<button type="button" class="hist-item" data-slug="${esc(e.slug)}"><b>${esc(e.name || e.slug)}</b><small>${esc(e.date || '')}${w}</small></button>`;
-    }).join('');
+    box.innerHTML = renderHistList(list);
   } catch (e) {
     box.innerHTML = '<div class="empty-h">No se ha podido cargar el histórico. Comprueba la conexión.</div>';
   }

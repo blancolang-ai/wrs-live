@@ -234,3 +234,26 @@ test('Perl = JS: aviso si hay tiempo en el tramo de la 4ª incidencia', () => {
   assert.match(w[0], /Dorsal 1: tiempo en TC4 con la 4ª incidencia \(abandono\); la web no lo cuenta/);
   assert.deepEqual(pl.warnings, js.warnings);
 });
+
+test('Perl = JS: temporada por fecha, pestaña del libro y encabezado de la hoja', () => {
+  let { js, pl } = compare(sheet());
+  assert.equal(js.data.season, 2025);
+  assert.deepEqual(pl.data, js.data);
+
+  const bookTab = { sheets: ['Temporada 2026', 'Rally Prueba', 'Plantilla'], bodies: { 'Temporada 2026': [['Puntuaciones WRSlot Cantabria Temporada 2026']], 'Rally Prueba': sheet(), 'Plantilla': [] } };
+  ({ js, pl } = compare(sheet(), bookTab));
+  assert.equal(js.data.season, 2026);
+  assert.deepEqual(pl.data, js.data);
+
+  const rows = sheet();
+  rows[0][0] = 'WRSlot Cantabria Temporada 2027';
+  ({ js, pl } = compare(rows, { sheets: ['Temporada 2026', 'Rally Prueba', 'Plantilla'], bodies: { 'Temporada 2026': [['Puntuaciones']], 'Rally Prueba': rows, 'Plantilla': [] } }));
+  assert.equal(js.data.season, 2027);
+  assert.deepEqual(pl.data, js.data);
+
+  const noDate = sheet();
+  noDate[1] = ['Pista Sintética', null, null, 'Indidencia'];
+  ({ js, pl } = compare(noDate));
+  assert.equal(js.data.season, undefined);
+  assert.deepEqual(pl.data, js.data);
+});

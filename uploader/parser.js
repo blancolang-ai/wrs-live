@@ -154,6 +154,11 @@ var RallyParser = (function () {
     data.pilotos = keep;
     data.champ = clip(data.champ, 80); data.rally = clip(data.rally, 80); data.venue = data.venue == null ? data.venue : clip(data.venue, 80);
     data.date = clip(data.date || '', 20);
+    if (data.season != null) {
+      var sy = asNum(data.season);
+      if (sy != null && sy >= 2000 && sy <= 2100) data.season = Math.round(sy);
+      else delete data.season;
+    } else { delete data.season; }
     if (data.cats.length > 6) { warn.push('Demasiadas categorías; se suben las 6 primeras'); data.cats = data.cats.slice(0, 6); }
     data.cats = data.cats.map(function (c) { return clip(c, 20); });
     if (data.dayLabels.length > 10) data.dayLabels = data.dayLabels.slice(0, 10);
@@ -190,6 +195,37 @@ var RallyParser = (function () {
     if (ct == null && isTHdr(n1)) ct = j + 1;
     if (cc == null && ct == null && !isOtherHdr(n1) && !isOtherHdr(n2)) { cc = j + 1; ct = j + 2; }
     return { cc: cc, ct: ct };
+  }
+
+
+  function seasonYear(s) {
+    var m = /temporada\s*[:.\-]?\s*(20\d{2})/i.exec(String(s == null ? '' : s));
+    return m ? parseInt(m[1], 10) : null;
+  }
+  function seasonFromRows(rows, sheetName) {
+    var y = seasonYear(sheetName);
+    if (y) return y;
+    var r, c, n = Math.min(rows.length, 25);
+    for (r = 0; r < n; r++) {
+      var row = rows[r] || [];
+      for (c = 0; c < row.length; c++) {
+        if (row[c] == null || typeof row[c] === 'number') continue;
+        y = seasonYear(row[c]);
+        if (y) return y;
+      }
+    }
+    return null;
+  }
+  function seasonFromBook(getXml) {
+    var wb = getXml('xl/workbook.xml'); if (!wb) return null;
+    var years = [], i, y, names = listSheets(wb);
+    for (i = 0; i < names.length; i++) {
+      y = seasonYear(names[i]);
+      if (y) years.push(y);
+    }
+    if (!years.length) return null;
+    years.sort(function (a, b) { return b - a; });
+    return years[0];
   }
 
   function parse(getXml, opts) {
@@ -355,10 +391,12 @@ var RallyParser = (function () {
       if (date) { var w = ((date.wd - (days.length - 1 - x)) % 7 + 7) % 7; return { short: wd[w], long: wdl[w] + ' · Día ' + d }; }
       return { short: 'D' + d, long: 'Día ' + d };
     });
+    var season = seasonFromRows(rows, sheet.name) || seasonFromBook(getXml) || (date && date.y) || null;
     var data = {
       format: 1, champ: opts.champ || 'WRSlot Cantabria', rally: rallyName, venue: venue,
       date: date ? date.d + ' ' + meses[date.m] : '', sections: outSecs, tramos: outT, pilotos: pilotos, cats: cats, dayLabels: dayLabels
     };
+    if (season) data.season = season;
     fitWorker(data, warn);
     times = 0; data.pilotos.forEach(function (p) { times += Object.keys(p.t).length; });
     return { data: data, warnings: warn, sheet: sheet.name, times: times };
