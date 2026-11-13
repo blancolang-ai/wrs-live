@@ -44,7 +44,7 @@ var UploaderCore = (function () {
         io.log('⛔ El servidor rechaza la clave (clave.txt). No se reintenta hasta volver a guardar. ' + (res.body || ''));
         st.pending = null; st.lastErr = 'key';
       } else if (res && (res.status === 413 || res.status === 422 || res.status === 400)) {
-        io.log('⛔ El servidor no acepta los datos (' + res.status + '): ' + (res.body || '') + '. Revisa el Excel y vuelve a guardar.');
+        io.log('⛔ El servidor no acepta los datos (' + res.status + '): ' + (res.body || '') + '. Comprueba que cada piloto tiene un dorsal numérico único y que los tiempos, C, T y penalizaciones son números. Corrige el Excel y vuelve a guardar.');
         st.pending = null; st.lastErr = 'data';
       } else {
         var why = err ? 'sin conexión' : 'error del servidor ' + (res && res.status);

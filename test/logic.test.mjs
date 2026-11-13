@@ -72,3 +72,44 @@ test('cambios entre versiones: detecta tiempos nuevos y corregidos', () => {
   assert.equal(ch.filter(c => c.ti === 2).length, 5); assert.ok(ch.some(c => c.d === 1 && c.ti === 0));
   assert.deepEqual(L.changes(a, a), []);
 });
+
+test('incBadges, etiqueta compacta e incidencias acumuladas hasta el límite', () => {
+  assert.deepEqual(L.incBadges('C', 3), ['C', 'C', 'C']);
+  assert.deepEqual(L.incBadges('T', 0), []);
+  assert.deepEqual(L.incBadges('T', '2'), ['T', 'T']);
+  assert.equal(L.incLabel({ c: 2, t: 1 }), 'C 2 · T 1');
+  assert.equal(L.incLabel({ c: 0, t: 0 }), '');
+  assert.equal(L.incLabel({ c: 2, t: 0 }), 'C 2');
+  const d = synth({ upTo: 4 }), m = L.model(d);
+  const st = L.standings(m, 3);
+  const bravo = st.find(r => r.p.dorsal === 2);
+  assert.equal(bravo.incC, 1); assert.equal(bravo.incT, 0);
+  assert.deepEqual(L.incAcc(m, m.byD[2], 3), { c: 1, t: 0 });
+  assert.deepEqual(L.incAcc(m, m.byD[2], 0), { c: 0, t: 0 });
+  st.filter(r => r.p.dorsal !== 2).forEach(r => { assert.equal(r.incC, 0); assert.equal(r.incT, 0); });
+});
+test('ranking de scratch: top 2 por categoría, empates compartiendo puesto y vacío sin tiempos', () => {
+  assert.deepEqual(L.scratchRanking(L.model(synth({ upTo: 0 }))), []);
+  const d = synth({ upTo: 4 }), m = L.model(d);
+  const n = {};
+  for (let ti = 0; ti <= 3; ti++) {
+    assert.equal(L.tramoComplete(m, ti), true);
+    L.tramoResults(m, ti).res.forEach(r => { if (r.scratch) n[r.p.dorsal] = (n[r.p.dorsal] || 0) + 1; });
+  }
+  const rk = L.scratchRanking(m, 3);
+  assert.ok(rk.length >= 1);
+  rk.forEach(g => {
+    assert.ok(g.rows.length <= 3);
+    g.rows.forEach(r => assert.equal(r.n, n[r.p.dorsal]));
+    const first = g.rows.filter(r => r.place === 1);
+    assert.ok(first.length >= 1);
+    first.forEach(r => assert.equal(r.n, first[0].n));
+    const second = g.rows.filter(r => r.place === 2);
+    if (second.length) assert.ok(second[0].n < first[0].n);
+  });
+  const d2 = synth({ upTo: 2 });
+  d2.pilotos.filter(p => p.cat === 'Rally1').forEach(p => { Object.keys(p.t).forEach(k => { p.t[k] = [100, 0, 0]; }); });
+  const r1 = L.scratchRanking(L.model(d2), 1).find(g => g.cat === 'Rally1');
+  assert.equal(r1.rows.length, 3);
+  assert.ok(r1.rows.every(r => r.place === 1 && r.n === 2));
+});

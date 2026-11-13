@@ -29,12 +29,19 @@ function book(rows, { sheets = ['Rally Prueba'], bodies } = {}) {
 const H = (tcs, withCat = true) => ['Pos.', 'Dorsal', 'Piloto', 'Coche', ...(withCat ? ['Categoría'] : []), 'Pesos', 'Incidencias acumuladas', ...tcs.flatMap(t => [t, 'C.', 'T.']), 'Suma', 'Total Rally Leg 1.1', 'Penalizaciones'];
 function sheet({ tcs = [['TC1 Uno 10 km', 'TC2 Dos 5 km'], ['TC3 Tres 8 km (Madera) POWER STAGE']], days = [1, 2], withCat = true, cell = null } = {}) {
   const rows = [['Leyenda:'], ['Pista Sintética', null, 46000, 'Indidencia'], []];
+  const acc = {};
   tcs.forEach((sec, si) => {
     rows.push([`Rally Prueba. Día ${days[si]}`], []);
     rows.push(H(sec, withCat));
     [[1, 'Ana', 'Rally1'], [2, 'Bea', 'Rally1'], [7, 'Ciro', 'Rally2']].forEach(([d, n, c], k) => {
-      const r = [k + 1, d, n, 'Coche X', ...(withCat ? [c] : []), '33/90', 0];
-      sec.forEach((_, ti) => r.push(cell && cell(si, ti, d) !== undefined ? cell(si, ti, d) : 100 + d + ti, d === 2 && ti === 0 ? 1 : 0, 0));
+      const times = [];
+      sec.forEach((_, ti) => {
+        const tm = cell && cell(si, ti, d) !== undefined ? cell(si, ti, d) : 100 + d + ti;
+        const cN = d === 2 && ti === 0 ? 1 : 0, tN = 0;
+        times.push(tm, cN, tN);
+        if (typeof tm === 'number' && tm > 0 && tm !== 999) acc[d] = (acc[d] || 0) + cN + tN;
+      });
+      const r = [k + 1, d, n, 'Coche X', ...(withCat ? [c] : []), '33/90', acc[d] || 0, ...times];
       r.push(0, 0, d === 7 && si === 0 ? 5 : 0); rows.push(r);
     });
     rows.push([]);
@@ -134,4 +141,64 @@ test('opts.sheet sigue eligiendo una pestaña concreta', () => {
   }), { sheet: 'Viejo' });
   assert.equal(r.sheet, 'Viejo');
   assert.equal(r.data.rally, 'Rally Prueba');
+});
+
+test('dorsales en texto se leen; filas sin dorsal válido se ignoran en silencio', () => {
+  assert.equal(P.parseDorsal(12), 12);
+  assert.equal(P.parseDorsal('12'), 12);
+  assert.equal(P.parseDorsal(' 12'), 12);
+  assert.equal(P.parseDorsal('12.0'), 12);
+  assert.equal(P.parseDorsal('#12'), 12);
+  assert.equal(P.parseDorsal('12,0'), 12);
+  assert.equal(P.parseDorsal('12.5'), null);
+  assert.equal(P.parseDorsal(''), null);
+  assert.equal(P.parseDorsal(null), null);
+  const rows = sheet();
+  // tras Ciro del día 1 (fila 8, 0-index): nombre sin dorsal, dorsal texto, dorsal #N
+  rows.splice(9, 0,
+    [4, '', 'SinDorsal', 'Coche X', 'Rally1', '33/90', 0, 130, 0, 0, 131, 0, 0, 0, 0, 0],
+    [5, '#8', 'Ocho', 'Coche X', 'Rally1', '33/90', 0, 108, 0, 0, 109, 0, 0, 0, 0, 0]
+  );
+  const { data, warnings } = P.parse(book(rows));
+  assert.equal(data.pilotos.find(p => p.nombre === 'SinDorsal'), undefined);
+  assert.ok(!warnings.some(w => /SinDorsal|sin dorsal|dorsal válido/i.test(w)));
+  const ocho = data.pilotos.find(p => p.nombre === 'Ocho');
+  assert.equal(ocho.dorsal, 8);
+  assert.ok(ocho.t.TC1);
+});
+test('C/T: «x» u otra marca vale 1; un número es el recuento', () => {
+  const rows = sheet();
+  // Ana TC1 C. = 'x', TC1 T. = 'T', Bea TC2 C. = 2, Ciro TC1 T. = '3'
+  // día 1 header fila 5; Ana 6, Bea 7, Ciro 8; cols: 8=C TC1, 9=T TC1, 11=C TC2, 12=T TC2
+  rows[6][8] = 'x'; rows[6][9] = 'T';
+  rows[7][11] = 2;
+  rows[8][9] = '3';
+  // ajustar incidencias acumuladas (col 6) al recuento real para no avisar
+  // Ana: 1+1 en TC1, 0 en TC2 → 2; día 2 sin C/T extra (Bea sigue teniendo C en primer tramo de cada sección)
+  rows[6][6] = 2; // Ana día 1
+  rows[7][6] = 3; // Bea TC1 C=1 + TC2 C=2
+  rows[8][6] = 3; // Ciro T=3
+  // día 2 starts after blank: find second Pos.
+  const hi2 = rows.findIndex((r, i) => i > 5 && r[0] === 'Pos.');
+  const a2 = hi2 + 1, b2 = hi2 + 2, c2 = hi2 + 3;
+  // Ana día 2: prev 2 + 0 = 2; Bea: 3 + 1 (ti===0 C) = 4; Ciro: 3
+  rows[a2][6] = 2; rows[b2][6] = 4; rows[c2][6] = 3;
+  const { data, warnings } = P.parse(book(rows));
+  const ana = data.pilotos.find(p => p.nombre === 'Ana');
+  const bea = data.pilotos.find(p => p.nombre === 'Bea');
+  const ciro = data.pilotos.find(p => p.dorsal === 7);
+  assert.deepEqual(ana.t.TC1, [101, 1, 1]);
+  assert.deepEqual(bea.t.TC2, [103, 2, 0]);
+  assert.deepEqual(ciro.t.TC1, [107, 0, 3]);
+  assert.ok(!warnings.some(w => /incidencias acumuladas/.test(w)));
+});
+test('incidencias acumuladas distintas del recuento: avisa y no falla', () => {
+  const rows = sheet();
+  // Bea tiene 1 C en TC1; el fixture ya pone el recuento correcto. Forzamos un 99 en día 1.
+  rows[7][6] = 99;
+  const r = P.parse(book(rows));
+  assert.ok(r.data.pilotos.find(p => p.dorsal === 2).t.TC1);
+  const w = r.warnings.filter(x => /incidencias acumuladas/.test(x));
+  assert.equal(w.length, 1);
+  assert.match(w[0], /Dorsal 2: incidencias acumuladas Excel=99, calculadas=1/);
 });

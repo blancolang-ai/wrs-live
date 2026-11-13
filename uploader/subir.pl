@@ -253,7 +253,7 @@ for (;;) {
       $st->{lastErr} = 'key';
       exit 1 if $once;
     } elsif ($res && ($res->{status} == 413 || $res->{status} == 422 || $res->{status} == 400)) {
-      logmsg('⛔ El servidor no acepta los datos (' . $res->{status} . '): ' . ($res->{body} // '') . '. Revisa el Excel y vuelve a guardar.');
+      logmsg('⛔ El servidor no acepta los datos (' . $res->{status} . '): ' . ($res->{body} // '') . '. Comprueba que cada piloto tiene un dorsal numérico único y que los tiempos, C, T y penalizaciones son números. Corrige el Excel y vuelve a guardar.');
       $st->{pending} = undef;
       $st->{lastErr} = 'data';
       exit 1 if $once;

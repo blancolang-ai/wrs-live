@@ -228,6 +228,117 @@ sub round3 {
   return 0 + $r;
 }
 
+# Entero o texto con pinta de número («12», « 12», «12.0», «#12») → entero; si no, undef.
+sub parse_dorsal {
+  my ($v) = @_;
+  return undef if !defined $v || (is_str($v) && $v eq '');
+  return undef if is_err($v);
+  my $n;
+  if (is_num($v)) { $n = nval($v); }
+  else {
+    my $s = is_num($v) ? nval($v) : "$v";
+    $s =~ s/\s+//g;
+    return undef if $s eq '';
+    $s =~ s/,/./;
+    $s =~ s/^[^0-9.+-]+//;
+    return undef unless $s =~ /^[+-]?\d+(?:\.\d+)?$/;
+    $n = 0 + $s;
+  }
+  return undef unless is_finite($n) && $n >= 0;
+  my $i = int($n + 0.5);
+  return undef if abs($n - $i) > 1e-6;
+  return 0 + $i;
+}
+sub clip {
+  my ($s, $max) = @_;
+  return $s if !defined $s;
+  $s = "$s";
+  return length($s) > $max ? substr($s, 0, $max) : $s;
+}
+sub as_num {
+  my ($v) = @_;
+  return nval($v) if is_num($v);
+  return 0 + $v if defined $v && !ref($v) && $v =~ /^-?\d+(?:\.\d+)?$/ && is_finite(0 + $v);
+  return undef if !defined $v || (is_str($v) && $v eq '');
+  my $s = "$v"; $s =~ s/,/./;
+  my $n = parse_float_str($s);
+  return defined $n && is_finite($n) ? $n : undef;
+}
+# Recorta y tipa para que el Worker nunca responda 422.
+sub fit_worker {
+  my ($data, $warn) = @_;
+  if (@{ $data->{sections} } > 20) {
+    push @$warn, 'Demasiadas secciones (' . scalar(@{ $data->{sections} }) . '); se suben las 20 primeras';
+    @{ $data->{sections} } = @{ $data->{sections} }[0 .. 19];
+  }
+  if (@{ $data->{tramos} } > 60) {
+    push @$warn, 'Demasiados tramos (' . scalar(@{ $data->{tramos} }) . '); se suben los 60 primeros';
+    @{ $data->{tramos} } = @{ $data->{tramos} }[0 .. 59];
+  }
+  for my $si (0 .. $#{ $data->{sections} }) {
+    my $sec = $data->{sections}[$si];
+    $sec->{id} = clip($sec->{id} || ('s' . $si), 10);
+    $sec->{name} = clip($sec->{name} || '', 60);
+    my $day = as_num($sec->{day});
+    $sec->{day} = defined $day ? 0 + $day : 0 + $si;
+    $sec->{tramos} = [] unless ref($sec->{tramos}) eq 'ARRAY';
+    if (@{ $sec->{tramos} } > 40) { @{ $sec->{tramos} } = @{ $sec->{tramos} }[0 .. 39]; }
+  }
+  my $secN = scalar @{ $data->{sections} };
+  my @tr;
+  for my $t (@{ $data->{tramos} }) {
+    $t->{id} = clip($t->{id}, 10);
+    next unless $t->{id};
+    $t->{name} = clip($t->{name} || '', 80);
+    $t->{km} = as_num($t->{km});
+    $t->{ps} = $t->{ps} ? JSON::PP::true : JSON::PP::false;
+    $t->{surf} = (!defined $t->{surf} || $t->{surf} eq '') ? undef : clip("$t->{surf}", 30);
+    my $sec = as_num($t->{sec});
+    $t->{sec} = defined $sec ? 0 + $sec : 0;
+    if ($t->{sec} < 0 || $t->{sec} >= $secN) { push @$warn, 'Tramo ' . $t->{id} . ': sección fuera de rango; se ignora'; next; }
+    push @tr, $t;
+  }
+  $data->{tramos} = \@tr;
+  my %ids = map { $_->{id} => 1 } @tr;
+  my %seen; my @keep;
+  for my $p (@{ $data->{pilotos} }) {
+    my $d = parse_dorsal($p->{dorsal});
+    next unless defined $d;
+    my $nombre = defined $p->{nombre} ? $p->{nombre} : '';
+    $nombre =~ s/^\s+|\s+$//g;
+    next if $nombre eq '';
+    if ($seen{$d}) { push @$warn, 'Dorsal ' . $d . ' repetido («' . $nombre . '»); se ignora el duplicado'; next; }
+    $seen{$d} = 1;
+    my %t;
+    my $src = $p->{t} || {};
+    for my $k (keys %$src) {
+      next unless $ids{$k} && $src->{$k};
+      my $a = $src->{$k};
+      my $t0 = as_num($a->[0]); next unless defined $t0;
+      my $c = as_num($a->[1]); my $te = as_num($a->[2]);
+      $t{$k} = [ $t0, defined $c ? int(($c >= 0 ? $c : 0) + 0.5) : 0, defined $te ? int(($te >= 0 ? $te : 0) + 0.5) : 0 ];
+    }
+    my @pen;
+    if (ref($p->{pen}) eq 'ARRAY') {
+      for my $x (@{ $p->{pen} }) { my $n = as_num($x); push @pen, defined $n ? $n : 0; }
+      @pen = @pen[0 .. 19] if @pen > 20;
+    }
+    push @keep, { dorsal => 0 + $d, nombre => clip($nombre, 60), coche => clip($p->{coche} || '', 80), cat => (clip($p->{cat} || 'Rally1', 20) || 'Rally1'), t => \%t, pen => \@pen };
+  }
+  if (@keep > 200) { push @$warn, 'Demasiados pilotos (' . scalar(@keep) . '); se suben los 200 primeros'; @keep = @keep[0 .. 199]; }
+  $data->{pilotos} = \@keep;
+  $data->{champ} = clip($data->{champ}, 80);
+  $data->{rally} = clip($data->{rally}, 80);
+  $data->{venue} = defined $data->{venue} ? clip($data->{venue}, 80) : $data->{venue};
+  $data->{date} = clip($data->{date} || '', 20);
+  if (@{ $data->{cats} } > 6) { push @$warn, 'Demasiadas categorías; se suben las 6 primeras'; @{ $data->{cats} } = @{ $data->{cats} }[0 .. 5]; }
+  $data->{cats} = [ map { clip($_, 20) } @{ $data->{cats} } ];
+  if (@{ $data->{dayLabels} } > 10) { @{ $data->{dayLabels} } = @{ $data->{dayLabels} }[0 .. 9]; }
+  for my $d (@{ $data->{dayLabels} }) { $d->{short} = clip($d->{short} || '', 6); $d->{long} = clip($d->{long} || '', 40); }
+}
+
+
+
 sub parse_tramo {
   my ($h) = @_;
   $h = norm($h);
@@ -349,6 +460,7 @@ sub parse {
     my $cC = $col->('Coche');
     my $cCat = $col->('Categoría');
     my $cPen = $col->('Penalizaciones');
+    my $cInc = $col->('Incidencias acumuladas');
     if (!defined $cP) {
       push @warn, $title . ': sin columna «Piloto»; se ignora la sección';
       next;
@@ -416,34 +528,54 @@ sub parse {
         my $f = parse_float_str($tmp);
         return defined $f && is_finite($f) ? $f : 0;
       };
+      my $cellCT = sub {
+        my ($x, $where) = @_;
+        return 0 if !defined $x || (is_str($x) && $x eq '');
+        if (is_num($x)) { my $n = int(nval($x) + (nval($x) >= 0 ? 0.5 : -0.5)); return $n > 0 ? $n : 0; }
+        if (is_err($x)) {
+          push @warn, $where . ': error «' . $x->{err} . '»; se toma 0';
+          return 0;
+        }
+        my $s = "$x"; $s =~ s/\s+//g;
+        return 0 if $s eq '';
+        $s =~ s/,/./;
+        if ($s =~ /^\d+(?:\.\d+)?$/) {
+          my $f = 0 + $s;
+          return (is_finite($f) && $f > 0) ? int($f + 0.5) : 0;
+        }
+        return 1;
+      };
       my $nmTrim = $nm; $nmTrim =~ s/^\s+|\s+$//g;
+      my $dorsal = parse_dorsal(defined $cD ? $r2->[$cD] : undef);
+      next unless defined $dorsal;
       my $who = $title . ' · ' . $nmTrim;
-      my $dorsal;
-      if (defined $cD) {
-        my $dv = $r2->[$cD];
-        if (is_num($dv) && is_finite_num($dv)) { $dorsal = nval($dv); }
-        elsif (defined $dv && !(is_str($dv) && $dv =~ /^\s*$/)) {
-          my $s = is_num($dv) ? nval($dv) : "$dv";
-          $s =~ s/^\s+|\s+$//g;
-          if ($s ne '' && $s =~ /^-?\d+(\.\d+)?$/ && is_finite(0 + $s)) { $dorsal = 0 + $s; }
-          else { $dorsal = undef; }
-        } else { $dorsal = undef; }
-      } else { $dorsal = undef; }
       my $coche = (defined $cC && defined $r2->[$cC]) ? norm($r2->[$cC]) : '';
       my $cat;
       if (defined $cCat && defined $r2->[$cCat] && norm($r2->[$cCat]) ne '') { $cat = norm($r2->[$cCat]); }
       else { $cat = undef; }
       my $pen = defined $cPen ? $cellN->($r2->[$cPen], $who . ' · Penalizaciones') : 0;
+      my $excelAcc;
+      if (defined $cInc) {
+        my $xv = $r2->[$cInc];
+        if (defined $xv && !(is_str($xv) && $xv eq '')) {
+          if (is_num($xv)) { $excelAcc = int(nval($xv) + (nval($xv) >= 0 ? 0.5 : -0.5)); }
+          elsif (!is_err($xv)) {
+            my $tmp = "$xv"; $tmp =~ s/,/./;
+            my $f = parse_float_str($tmp);
+            $excelAcc = int($f + ($f >= 0 ? 0.5 : -0.5)) if defined $f && is_finite($f);
+          }
+        }
+      }
       my @t;
       for my $t (@tramos) {
         my $w = $who . ' · TC' . $t->{num};
         push @t, [
           $cellT->($r2->[$t->{cT}], $w),
-          defined $t->{cC} ? $cellN->($r2->[$t->{cC}], $w . ' C.') : 0,
-          defined $t->{cTe} ? $cellN->($r2->[$t->{cTe}], $w . ' T.') : 0,
+          defined $t->{cC} ? $cellCT->($r2->[$t->{cC}], $w . ' C.') : 0,
+          defined $t->{cTe} ? $cellCT->($r2->[$t->{cTe}], $w . ' T.') : 0,
         ];
       }
-      push @drivers, { dorsal => $dorsal, nombre => $nmTrim, coche => $coche, cat => $cat, pen => $pen, t => \@t };
+      push @drivers, { dorsal => $dorsal, nombre => $nmTrim, coche => $coche, cat => $cat, pen => $pen, excelAcc => $excelAcc, t => \@t };
     }
     $part = defined $part ? $part : '';
     $part =~ s/^\s+|\s+$//g;
@@ -508,17 +640,21 @@ sub parse {
           $p->{t}{ $ids[$x] } = [ round3($tv->[0]), int(($tv->[1] || 0) + (($tv->[1] || 0) >= 0 ? 0.5 : -0.5)), int(($tv->[2] || 0) + (($tv->[2] || 0) >= 0 ? 0.5 : -0.5)) ];
         }
       }
+      if (defined $d->{excelAcc}) {
+        my $calc = 0;
+        for my $tid (keys %{ $p->{t} }) {
+          my $tv = $p->{t}{$tid};
+          next if !$tv || $tv->[0] == 999;
+          $calc += ($tv->[1] || 0) + ($tv->[2] || 0);
+        }
+        if ($calc != $d->{excelAcc}) {
+          push @warn, 'Dorsal ' . $d->{dorsal} . ': incidencias acumuladas Excel=' . $d->{excelAcc} . ', calculadas=' . $calc . ' (' . $name . ')';
+        }
+      }
     }
   }
 
   my @pilotos = map { $pil{$_} } @order;
-  my @noDorsal = grep { !defined $_->{dorsal} } @pilotos;
-  if (@noDorsal) {
-    push @warn, 'Pilotos sin dorsal: ' . join(', ', map { $_->{nombre} } @noDorsal) . ' (se les asigna uno provisional)';
-  }
-  my $maxD = 0;
-  for my $p (@pilotos) { my $d = $p->{dorsal} || 0; $maxD = $d if $d > $maxD; }
-  for my $x (0 .. $#noDorsal) { $noDorsal[$x]{dorsal} = 1000 + $maxD + $x; }
   if (@outT && !grep { $_->{ps} } @outT) {
     push @warn, 'Ningún tramo marcado como POWER STAGE';
   }
@@ -572,6 +708,10 @@ sub parse {
     cats => \@cats,
     dayLabels => \@dayLabels,
   };
+  fit_worker($data, \@warn);
+  my $times2 = 0;
+  for my $p (@{ $data->{pilotos} }) { $times2 += scalar keys %{ $p->{t} }; }
+  $times = $times2;
   return { data => $data, warnings => \@warn, sheet => $sheet->{name}, times => 0 + $times };
 }
 

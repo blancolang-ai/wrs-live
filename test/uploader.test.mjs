@@ -47,3 +47,15 @@ test('anuncia la pestaña usada una vez y otra si cambia', () => {
   assert.equal(io.logs.filter(l => /📄 Usando la pestaña «Kenya»/.test(l)).length, 1);
   assert.equal(io.logs.filter(l => /📄 Usando la pestaña «Finlandia»/.test(l)).length, 1);
 });
+
+test('422: el mensaje menciona dorsales y números y conserva el detalle del servidor', () => {
+  const io = fakeIo();
+  io.post = j => { io.posts.push(j); return { status: 422, body: '{"error":"formato: dorsal no es número"}' }; };
+  io.save(true); io.run(4);
+  assert.equal(io.posts.length, 1);
+  const msg = io.logs.find(l => /422/.test(l));
+  assert.ok(msg);
+  assert.match(msg, /dorsal no es número/);
+  assert.match(msg, /dorsal numérico único/);
+  assert.match(msg, /Corrige el Excel/);
+});

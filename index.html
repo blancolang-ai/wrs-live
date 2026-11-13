@@ -74,7 +74,7 @@ main{flex:1;min-height:0;position:relative}
 .up{color:var(--up)}.down{color:var(--down)}.eq{color:#b5bcc7}
 .dor{width:30px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font:800 15px/1 BC;color:#fff;background:var(--cc)}
 .nm{font:700 16px/1.1 Barlow;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.nm2{font:500 11.5px/1.2 Barlow;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.nm2{font:500 11.5px/1.25 Barlow;color:var(--muted);white-space:normal;overflow:visible;margin-top:2px}
 .tot{font:700 17px/1 BC;text-align:right;letter-spacing:.01em}
 .tot small{display:block;font:700 11px/1 BC;color:var(--red);margin-top:2px}
 .dif{text-align:right;font:600 14px/1 BC}
@@ -86,12 +86,15 @@ main{flex:1;min-height:0;position:relative}
 .ab .nm,.ab .tot,.ab .pos{color:#9aa2ad}
 .ab .dor{background:#b7bec8}
 .inc{color:var(--red)!important}
-.tg{display:inline-block;font:800 10px/1 BC;color:#fff;background:var(--red);border-radius:3px;padding:2px 3px 1px;margin-left:3px;vertical-align:2px}
+.tgs{display:inline-flex;flex-wrap:wrap;align-items:center;gap:1px;margin-left:3px;max-width:100%;vertical-align:middle}
+.tg{display:inline-flex;align-items:center;justify-content:center;font:800 9px/1 BC;color:#fff;background:var(--red);border-radius:2px;padding:1px 3px 0;min-width:11px;vertical-align:2px}
+.tgs.many .tg{font-size:8px;padding:1px 2px 0;min-width:9px}
+.acci{font:700 10px/1 BC;color:var(--red);letter-spacing:.02em;white-space:nowrap}
 .pend{color:#9aa2ad;font:600 13px/1 BC}
 
 /* clasificación */
 #v-clas .row,#v-clas .colh{grid-template-columns:30px 38px 1fr 84px 68px;column-gap:6px}
-#v-clas .row{height:46px}
+#v-clas .row{min-height:46px;height:auto;padding-top:5px;padding-bottom:5px;align-items:center}
 
 /* tramos */
 .chips{display:flex;gap:4px;overflow-x:auto;padding:6px 10px;background:var(--paper);border-bottom:1px solid var(--line);flex:none;scrollbar-width:none}
@@ -109,8 +112,9 @@ main{flex:1;min-height:0;position:relative}
 .thead .tt span{font:500 12px/1.2 Barlow;color:var(--muted)}
 .ps{font:800 10px/1 BC;background:#7c3aed;color:#fff;border-radius:3px;padding:2px 4px 1px;vertical-align:3px;margin-left:4px}
 #v-tramo .row,#v-tramo .colh{grid-template-columns:26px 36px 1fr 80px 64px 38px;column-gap:5px}
-#v-tramo .row{height:43px}
-.tm{justify-self:end;font:700 17px/1 BC;padding:5px 6px 4px;border-radius:6px;text-align:right;white-space:nowrap}
+#v-tramo .row{min-height:43px;height:auto;padding-top:4px;padding-bottom:4px;align-items:center}
+.tm{justify-self:end;font:700 17px/1 BC;padding:5px 6px 4px;border-radius:6px;text-align:right;white-space:normal;max-width:100%;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:1px;line-height:1.1}
+.tm .tgs{margin-left:0;justify-content:flex-end}
 .tm.s1{background:var(--r1-bg);box-shadow:inset 0 0 0 1.5px var(--r1)}
 .tm.s2{background:var(--r2-bg);box-shadow:inset 0 0 0 1.5px var(--r2)}
 .gral{text-align:center;font:700 14px/1 BC}
@@ -132,6 +136,30 @@ main{flex:1;min-height:0;position:relative}
 #v-salida .row{grid-template-columns:34px 38px 1fr 120px;column-gap:6px;height:39px}
 .sn{font:800 20px/1 BC;text-align:center}
 .slot{color:#9aa2ad;font:italic 500 13px/1 Barlow}
+
+/* ranking de scratch (clasificación) */
+.srk{flex:none;background:#f7f8fa;border-bottom:1px solid var(--line);font:500 12px/1.2 Barlow;color:var(--ink)}
+.srk-d{margin:0}
+.srk-d>summary{list-style:none;display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;min-height:32px}
+.srk-d>summary::-webkit-details-marker{display:none}
+.srk-d>summary:before{content:"";flex:none;width:0;height:0;border:4px solid transparent;border-left:6px solid #8a93a0;margin-right:2px}
+.srk-d[open]>summary:before{border-left-color:transparent;border-right:0;border-top:6px solid #8a93a0;border-bottom:0;margin-top:2px}
+.srk-title{font:700 11px/1 BC;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);flex:none}
+.srk-sum{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:600 11.5px/1.2 BC;color:var(--ink)}
+.srk-s{display:inline-block;font:800 10px/1 BC;letter-spacing:.04em;padding:2px 4px 1px;border-radius:3px;margin-right:2px;color:#fff}
+.srk-s.R1{background:var(--r1)}.srk-s.R2{background:var(--r2)}
+.srk-sep{margin:0 7px;color:#c3c8d0}
+.srk-body{display:flex;gap:8px;padding:0 10px 8px;overflow-x:auto}
+.srk-cat{flex:1;min-width:140px;background:#fff;border-radius:8px;padding:4px 6px 5px;box-shadow:inset 0 0 0 1px var(--line)}
+.srk-cat.R1{box-shadow:inset 0 0 0 1.5px var(--r1);--cc:var(--r1)}
+.srk-cat.R2{box-shadow:inset 0 0 0 1.5px var(--r2);--cc:var(--r2)}
+.srk-h{font:800 10px/1 BC;letter-spacing:.07em;text-transform:uppercase;padding:3px 2px 4px;color:var(--r2-ink)}
+.srk-cat.R1 .srk-h{color:var(--r1-ink)}
+.srk-row{display:grid;grid-template-columns:22px 28px 1fr 18px;gap:4px;align-items:center;min-height:22px;cursor:pointer}
+.srk-pl{font:800 12px/1 BC;color:var(--muted);text-align:center}
+.srk-row .dor{width:24px;height:18px;font-size:11px;border-radius:4px}
+.srk-row .nm{font:700 12.5px/1.1 Barlow;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srk-n{font:800 13px/1 BC;text-align:right}
 
 /* tab bar */
 nav{flex:none;display:flex;background:#fff;border-top:1px solid #dfe2e7;padding-bottom:var(--sab)}
@@ -166,7 +194,8 @@ nav button.on{color:var(--accent)}
 .sec .sh b{color:var(--ink);letter-spacing:.02em}
 .cells{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
 .cell{background:#f3f4f7;border-radius:8px;padding:5px 6px 5px;min-height:50px}
-.cell .ci{display:flex;justify-content:space-between;font:700 10.5px/1 BC;color:var(--muted)}
+.cell .ci{display:flex;justify-content:space-between;align-items:flex-start;gap:2px;font:700 10.5px/1 BC;color:var(--muted)}
+.cell .ci .tgs{margin-left:0;max-width:70%;justify-content:flex-end}
 .cell .cv{font:800 17px/1 BC;margin-top:5px}
 .cell .cp{font:600 10.5px/1 BC;color:var(--muted);margin-top:3px}
 .cell.s1{background:var(--r1-bg);box-shadow:inset 0 0 0 1.5px var(--r1)}
@@ -213,6 +242,7 @@ nav button.on{color:var(--accent)}
         <label class="sel"><span id="aft-l">—</span><select id="aft"></select></label>
         <div class="ticker" id="ticker"></div>
       </div>
+      <div id="scratch-rank" class="srk" hidden></div>
       <div class="colh"><span style="text-align:center">Pos</span><span>Nº</span><span>Piloto · último tramo</span><span style="text-align:right">Total</span><span style="text-align:right;color:var(--ink)">Dif. ant.<br><span style="font-size:9.5px;color:var(--muted)">Dif. 1º</span></span></div>
       <div class="list" id="clas"></div>
     </section>

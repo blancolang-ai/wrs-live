@@ -85,6 +85,82 @@ var RallyParser = (function () {
   function isNum(v) { return typeof v === 'number' && isFinite(v); }
   function round3(x) { return Math.round(x * 1000) / 1000; }
 
+  /* Entero o texto con pinta de número («12», « 12», «12.0», «#12») → entero; si no, null. */
+  function parseDorsal(v) {
+    if (v == null || v === '') return null;
+    if (typeof v === 'object' && v.err) return null;
+    var n;
+    if (isNum(v)) n = v;
+    else {
+      var s = String(v).replace(/\s+/g, '');
+      if (!s) return null;
+      s = s.replace(',', '.');
+      s = s.replace(/^[^0-9.+-]+/, '');
+      if (!/^[+-]?\d+(\.\d+)?$/.test(s)) return null;
+      n = parseFloat(s);
+    }
+    if (!isFinite(n) || n < 0) return null;
+    var i = Math.round(n);
+    if (Math.abs(n - i) > 1e-6) return null;
+    return i;
+  }
+  function clip(s, max) { if (s == null) return s; s = String(s); return s.length > max ? s.slice(0, max) : s; }
+  function asNum(v) {
+    if (isNum(v)) return v;
+    if (v == null || v === '') return null;
+    var n = parseFloat(String(v).replace(',', '.'));
+    return isFinite(n) ? n : null;
+  }
+  /* Recorta y tipa para que el Worker nunca responda 422. */
+  function fitWorker(data, warn) {
+    if (data.sections.length > 20) { warn.push('Demasiadas secciones (' + data.sections.length + '); se suben las 20 primeras'); data.sections = data.sections.slice(0, 20); }
+    if (data.tramos.length > 60) { warn.push('Demasiados tramos (' + data.tramos.length + '); se suben los 60 primeros'); data.tramos = data.tramos.slice(0, 60); }
+    data.sections.forEach(function (s, si) {
+      s.id = clip(s.id || ('s' + si), 10); s.name = clip(s.name || '', 60);
+      var day = asNum(s.day); s.day = day == null ? si : day;
+      if (!Array.isArray(s.tramos)) s.tramos = [];
+      if (s.tramos.length > 40) s.tramos = s.tramos.slice(0, 40);
+    });
+    var secN = data.sections.length;
+    data.tramos = data.tramos.filter(function (t, ti) {
+      t.id = clip(t.id, 10); if (!t.id) return false;
+      t.name = clip(t.name || '', 80); t.km = asNum(t.km);
+      t.ps = !!t.ps; t.surf = t.surf == null || t.surf === '' ? null : clip(String(t.surf), 30);
+      var sec = asNum(t.sec); t.sec = sec == null ? 0 : sec;
+      if (t.sec < 0 || t.sec >= secN) { warn.push('Tramo ' + t.id + ': sección fuera de rango; se ignora'); return false; }
+      return true;
+    });
+    var ids = {}; data.tramos.forEach(function (t) { ids[t.id] = 1; });
+    var seen = {}, keep = [];
+    data.pilotos.forEach(function (p) {
+      var d = parseDorsal(p.dorsal);
+      if (d == null) return;
+      var nombre = p.nombre == null ? '' : String(p.nombre).trim();
+      if (!nombre) return;
+      if (seen[d]) { warn.push('Dorsal ' + d + ' repetido («' + nombre + '»); se ignora el duplicado'); return; }
+      seen[d] = 1;
+      var t = {}, src = p.t || {};
+      Object.keys(src).forEach(function (k) {
+        if (!ids[k] || !src[k]) return;
+        var t0 = asNum(src[k][0]), c = asNum(src[k][1]), te = asNum(src[k][2]);
+        if (t0 == null) return;
+        t[k] = [t0, c == null ? 0 : Math.max(0, Math.round(c)), te == null ? 0 : Math.max(0, Math.round(te))];
+      });
+      var pen = Array.isArray(p.pen) ? p.pen.map(function (x) { var n = asNum(x); return n == null ? 0 : n; }) : [];
+      if (pen.length > 20) pen = pen.slice(0, 20);
+      keep.push({ dorsal: d, nombre: clip(nombre, 60), coche: clip(p.coche || '', 80), cat: clip(p.cat || 'Rally1', 20) || 'Rally1', t: t, pen: pen });
+    });
+    if (keep.length > 200) { warn.push('Demasiados pilotos (' + keep.length + '); se suben los 200 primeros'); keep = keep.slice(0, 200); }
+    data.pilotos = keep;
+    data.champ = clip(data.champ, 80); data.rally = clip(data.rally, 80); data.venue = data.venue == null ? data.venue : clip(data.venue, 80);
+    data.date = clip(data.date || '', 20);
+    if (data.cats.length > 6) { warn.push('Demasiadas categorías; se suben las 6 primeras'); data.cats = data.cats.slice(0, 6); }
+    data.cats = data.cats.map(function (c) { return clip(c, 20); });
+    if (data.dayLabels.length > 10) data.dayLabels = data.dayLabels.slice(0, 10);
+    data.dayLabels.forEach(function (d) { d.short = clip(d.short || '', 6); d.long = clip(d.long || '', 40); });
+    return data;
+  }
+
   function parseTramo(h) {
     h = norm(h);
     var m = /^TC\s*(\d+)\s*[.\-]?\s*(.*)$/i.exec(h);
@@ -122,6 +198,7 @@ var RallyParser = (function () {
       for (var j = 0; j < hr.length; j++) h[j] = hr[j] != null ? norm(hr[j]) : '';
       var col = function (name) { for (var j = 0; j < h.length; j++) if (h[j].toLowerCase() === name.toLowerCase()) return j; return null; };
       var cD = col('Dorsal'), cP = col('Piloto'), cC = col('Coche'), cCat = col('Categoría'), cPen = col('Penalizaciones');
+      var cInc = col('Incidencias acumuladas');
       if (cP === null) { warn.push(title + ': sin columna «Piloto»; se ignora la sección'); continue; }
       var tramos = [];
       for (j = 0; j < h.length; j++) {
@@ -157,15 +234,39 @@ var RallyParser = (function () {
           if (typeof x === 'object' && x.err) { warn.push(where + ': error «' + x.err + '»; se toma 0'); return 0; }
           var f = parseFloat(String(x).replace(',', '.')); return isFinite(f) ? f : 0;
         };
+        var cellCT = function (x, where) {
+          if (x == null || x === '') return 0;
+          if (isNum(x)) { var n = Math.round(x); return n > 0 ? n : 0; }
+          if (typeof x === 'object' && x.err) { warn.push(where + ': error «' + x.err + '»; se toma 0'); return 0; }
+          var s = String(x).replace(/\s+/g, '');
+          if (!s) return 0;
+          var t = s.replace(',', '.');
+          if (/^\d+(\.\d+)?$/.test(t)) { var f = parseFloat(t); return isFinite(f) && f > 0 ? Math.round(f) : 0; }
+          return 1;
+        };
+        var dorsal = parseDorsal(cD !== null ? r2[cD] : null);
+        if (dorsal === null) continue;
         var who = title + ' · ' + nm.trim();
+        var excelAcc = null;
+        if (cInc !== null) {
+          var xv = r2[cInc];
+          if (xv != null && xv !== '') {
+            if (isNum(xv)) excelAcc = Math.round(xv);
+            else if (!(typeof xv === 'object' && xv.err)) {
+              var af = parseFloat(String(xv).replace(',', '.'));
+              if (isFinite(af)) excelAcc = Math.round(af);
+            }
+          }
+        }
         drivers.push({
-          dorsal: isNum(r2[cD]) ? r2[cD] : (r2[cD] != null && String(r2[cD]).trim() !== '' && isFinite(+r2[cD]) ? +r2[cD] : null),
+          dorsal: dorsal,
           nombre: nm.trim(), coche: cC !== null && r2[cC] != null ? norm(r2[cC]) : '',
           cat: cCat !== null && r2[cCat] != null && norm(r2[cCat]) ? norm(r2[cCat]) : null,
           pen: cPen !== null ? cellN(r2[cPen], who + ' · Penalizaciones') : 0,
+          excelAcc: excelAcc,
           t: tramos.map(function (t) {
             var w = who + ' · TC' + t.num;
-            return [cellT(r2[t.cT], w), t.cC !== null ? cellN(r2[t.cC], w + ' C.') : 0, t.cTe !== null ? cellN(r2[t.cTe], w + ' T.') : 0];
+            return [cellT(r2[t.cT], w), t.cC !== null ? cellCT(r2[t.cC], w + ' C.') : 0, t.cTe !== null ? cellCT(r2[t.cTe], w + ' T.') : 0];
           })
         });
       }
@@ -199,13 +300,18 @@ var RallyParser = (function () {
         if (!p.cat && d.cat) p.cat = d.cat;
         p.pen[si] = round3(d.pen || 0);
         ids.forEach(function (tid, x) { var tv = d.t[x]; if (tv[0] !== null && tv[0] > 0) p.t[tid] = [round3(tv[0]), Math.round(tv[1] || 0), Math.round(tv[2] || 0)]; });
+        if (d.excelAcc != null) {
+          var calc = 0;
+          Object.keys(p.t).forEach(function (tid) {
+            var tv = p.t[tid];
+            if (!tv || tv[0] === 999) return;
+            calc += (tv[1] || 0) + (tv[2] || 0);
+          });
+          if (calc !== d.excelAcc) warn.push('Dorsal ' + d.dorsal + ': incidencias acumuladas Excel=' + d.excelAcc + ', calculadas=' + calc + ' (' + name + ')');
+        }
       });
     });
     var pilotos = order.map(function (k) { return pil[k]; });
-    var noDorsal = pilotos.filter(function (p) { return p.dorsal === null; });
-    if (noDorsal.length) warn.push('Pilotos sin dorsal: ' + noDorsal.map(function (p) { return p.nombre; }).join(', ') + ' (se les asigna uno provisional)');
-    var maxD = Math.max.apply(null, [0].concat(pilotos.map(function (p) { return p.dorsal || 0; })));
-    noDorsal.forEach(function (p, x) { p.dorsal = 1000 + maxD + x; });
     if (outT.length && !outT.some(function (t) { return t.ps; })) warn.push('Ningún tramo marcado como POWER STAGE');
     var cats = []; pilotos.forEach(function (p) { if (p.cat && cats.indexOf(p.cat) < 0) cats.push(p.cat); }); cats.sort();
     if (!cats.length) { warn.push('Sin columna Categoría (formato antiguo): se trata como una sola categoría'); pilotos.forEach(function (p) { p.cat = 'Rally1'; }); cats = ['Rally1']; }
@@ -227,8 +333,10 @@ var RallyParser = (function () {
       format: 1, champ: opts.champ || 'WRSlot Cantabria', rally: rallyName, venue: venue,
       date: date ? date.d + ' ' + meses[date.m] : '', sections: outSecs, tramos: outT, pilotos: pilotos, cats: cats, dayLabels: dayLabels
     };
+    fitWorker(data, warn);
+    times = 0; data.pilotos.forEach(function (p) { times += Object.keys(p.t).length; });
     return { data: data, warnings: warn, sheet: sheet.name, times: times };
   }
-  return { parse: parse, readSheet: readSheet, parseTramo: parseTramo, pickLiveSheet: pickLiveSheet, foldName: foldName };
+  return { parse: parse, readSheet: readSheet, parseTramo: parseTramo, pickLiveSheet: pickLiveSheet, foldName: foldName, parseDorsal: parseDorsal };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = RallyParser;

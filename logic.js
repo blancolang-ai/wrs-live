@@ -17,6 +17,46 @@
   const raw = (m, p, ti) => p.t[m.T[ti].id] || null;           // [tiempo, C, T]
   const vis = (m, ti, d) => !!m.byD[d].t[m.T[ti].id];
   const dayOfSec = (m, s) => m.SEC[s].day;
+  function incCount(n) { n = Math.round(Number(n)); return isFinite(n) && n > 0 ? n : 0; }
+  function incBadges(letter, n) { const k = incCount(n), a = []; for (let i = 0; i < k; i++) a.push(letter); return a; }
+  /* C y T acumulados hasta el tramo «limit» (misma regla que el total de tiempos). */
+  function incAcc(m, p, limit = m.T.length - 1) {
+    let c = 0, t = 0, ab = null;
+    for (let ti = 0; ti <= limit; ti++) {
+      const v = raw(m, p, ti); if (!v) continue;
+      if (v[0] === 999) { if (ab == null) ab = ti; continue; }
+      if (ab != null) continue;
+      c += incCount(v[1]); t += incCount(v[2]);
+    }
+    return { c, t };
+  }
+  function incLabel(acc) {
+    const parts = [];
+    if (acc.c > 0) parts.push('C ' + acc.c);
+    if (acc.t > 0) parts.push('T ' + acc.t);
+    return parts.join(' · ');
+  }
+  /* Los 2 primeros puestos de scratch por categoría (empates comparten puesto; máx. 3 líneas).
+     Solo tramos completos, con la misma regla de scratch que el sombreado. */
+  function scratchRanking(m, limit = m.T.length - 1) {
+    const n = {};
+    for (let ti = 0; ti <= limit; ti++) {
+      if (!tramoComplete(m, ti)) continue;
+      tramoResults(m, ti).res.forEach(r => { if (r.scratch) n[r.p.dorsal] = (n[r.p.dorsal] || 0) + 1; });
+    }
+    return m.CATS.map(cat => {
+      const pil = m.P.filter(p => p.cat === cat).map(p => ({ p, n: n[p.dorsal] || 0 })).filter(x => x.n > 0)
+        .sort((a, b) => b.n - a.n || a.p.dorsal - b.p.dorsal);
+      const rows = [];
+      let place = 0, prev = null;
+      for (const x of pil) {
+        if (x.n !== prev) { if (rows.length && place >= 2) break; place = rows.length + 1; prev = x.n; }
+        if (rows.length >= 3) break;
+        rows.push({ place, n: x.n, p: x.p });
+      }
+      return { cat, rows };
+    }).filter(g => g.rows.length);
+  }
   // ¿todos los pilotos tienen tiempo en el tramo? (los abandonados antes no cuentan)
   function tramoComplete(m, ti) {
     let any = false;
@@ -37,17 +77,18 @@
   function standings(m, limit = m.T.length - 1) {
     const key = 'st' + limit; if (m.cache.has(key)) return m.cache.get(key).map(r => ({ ...r }));
     const rows = m.P.map(p => {
-      let n = 0, tot = 0, ab = null, last = null, pen = 0;
+      let n = 0, tot = 0, ab = null, last = null, pen = 0, incC = 0, incT = 0;
       const secTouched = new Set();
       for (let ti = 0; ti <= limit; ti++) {
         const v = raw(m, p, ti); if (!v) continue;
         if (v[0] === 999) { if (ab == null) ab = ti; continue; }
         if (ab != null) continue;
         n++; tot += v[0]; last = ti; secTouched.add(m.T[ti].sec);
+        incC += incCount(v[1]); incT += incCount(v[2]);
       }
       secTouched.forEach(s => pen += p.pen[s] || 0);
       tot = Math.round((tot + pen) * 1000) / 1000;
-      return { p, n, tot, ab, last, pen };
+      return { p, n, tot, ab, last, pen, incC, incT };
     });
     const act = rows.filter(r => r.ab == null).sort((a, b) => b.n - a.n || a.tot - b.tot || a.p.dorsal - b.p.dorsal);
     const abs = rows.filter(r => r.ab != null).sort((a, b) => b.ab - a.ab || a.p.dorsal - b.p.dorsal);
@@ -138,6 +179,6 @@
   const catShort = c => c === R1 ? 'R1' : c === 'Rally2' ? 'R2' : String(c).slice(0, 3);
   const catCls = c => c === R1 ? 'R1' : 'R2';
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
-  const api = { model, vis, raw, tramoComplete, curTramo, hasTimes, isFinal, isLive, standings, withDiffs, tramoResults, startOrder, expectedOrder, changes, decs, fmt, fmmss, fdif, fpen, ord, catShort, catCls, esc, dayOfSec };
+  const api = { model, vis, raw, tramoComplete, curTramo, hasTimes, isFinal, isLive, standings, withDiffs, tramoResults, startOrder, expectedOrder, changes, incCount, incBadges, incAcc, incLabel, scratchRanking, decs, fmt, fmmss, fdif, fpen, ord, catShort, catCls, esc, dayOfSec };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.RD = api;
 })(typeof window !== 'undefined' ? window : globalThis);

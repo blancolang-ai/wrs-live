@@ -1,7 +1,7 @@
 'use strict';
 /* Rally Directo · interfaz. Los datos llegan SOLO del Worker (GET /data) cada ~10 s. */
 const L = window.RD, $ = id => document.getElementById(id);
-const { fmt, fmmss, fdif, fpen, ord, catShort, catCls, esc } = L;
+const { fmt, fmmss, fdif, fpen, ord, catShort, catCls, esc, incLabel } = L;
 const API = (window.RD_API || '').replace(/\/$/, '');
 const POLL_MS = 10000;
 let M = null, DATA = null, VERSION = null, AT = null;
@@ -13,7 +13,12 @@ const posOf = r => S.cat === 'all' ? r.pos : r.cpos;
 let flashD = new Set(), lastNew = null;
 const T = () => M.T, ccol = c => c === 'Rally1' ? 'r1' : 'r2';
 const chg = (a, b) => { if (a == null || b == null) return ''; const d = a - b; return d > 0 ? `<small class="up">▲${d}</small>` : d < 0 ? `<small class="down">▼${-d}</small>` : `<small class="eq">=</small>`; };
-const tags = x => (x.c ? '<span class="tg">C</span>' : '') + (x.t ? '<span class="tg">T</span>' : '');
+const tags = x => {
+  const cs = L.incBadges('C', x.c), ts = L.incBadges('T', x.t);
+  if (!cs.length && !ts.length) return '';
+  const n = cs.length + ts.length;
+  return '<span class="tgs' + (n > 4 ? ' many' : '') + '">' + [...cs, ...ts].map(l => '<span class="tg">' + l + '</span>').join('') + '</span>';
+};
 const hhmmss = iso => { try { return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); } catch { return ''; } };
 
 function renderHeader() {
@@ -66,7 +71,9 @@ function renderClas() {
     let l2 = '';
     if (r.ab != null) l2 = `Abandono en ${Tt[r.ab].id}`;
     else if (isPend) { const nx = r.last == null ? 0 : r.last + 1; l2 = Tt[nx] ? `<span style="color:#b7791f;font-weight:600">${Tt[nx].id} por salir</span>` : ''; }
-    else if (r.last != null) { const x = L.tramoResults(M, r.last).res.find(z => z.p.dorsal === p.dorsal); l2 = `${Tt[r.last].id} <span class="${x.c || x.t ? 'inc' : ''}">${fmt(x.tm)}</span>${tags(x)} · ${ord(S.cat === 'all' ? x.pos : x.cpos)}`; }
+    else if (r.last != null) { const x = L.tramoResults(M, r.last).res.find(z => z.p.dorsal === p.dorsal); l2 = `${Tt[r.last].id} <span class="${x.c || x.t ? 'inc' : ''}">${fmt(x.tm)}</span> · ${ord(S.cat === 'all' ? x.pos : x.cpos)}${tags(x)}`; }
+    const acc = incLabel({ c: r.incC || 0, t: r.incT || 0 });
+    if (acc) l2 = (l2 ? l2 + ' · ' : '') + `<span class="acci">${acc}</span>`;
     const tot = r.ab != null ? 'Ab.' : (r.n ? fmt(r.tot) : '—');
     const pen = (r.pen && r.ab == null ? `<small>pen. +${fpen(r.pen)}</small>` : '') + (fin && r.ab == null && r.n ? `<small style="color:var(--muted);font-weight:600">${fmmss(r.tot)}</small>` : '');
     const sub = x => x.d1 != null && Math.abs(x.d1 - x.dp) > 1e-6 ? '1º ' + fdif(x.d1) : '';
@@ -77,6 +84,25 @@ function renderClas() {
       <div style="min-width:0"><div class="nm">${esc(p.nombre)}</div><div class="nm2">${l2}</div></div>
       <div class="tot num" ${isPend ? 'style="color:#8a93a0"' : ''}>${tot}${pen}</div><div class="dif num">${dif}</div></div>`;
   }).join('');
+  renderScratchRank(lim);
+}
+
+function renderScratchRank(lim) {
+  const el = $('scratch-rank');
+  if (!el) return;
+  const groups = L.hasTimes(M) ? L.scratchRanking(M, lim).filter(g => S.cat === 'all' || g.cat === S.cat) : [];
+  if (!groups.length) { el.hidden = true; el.innerHTML = ''; return; }
+  const wasOpen = !!(el.querySelector('details') && el.querySelector('details').open);
+  const sum = groups.map(g => {
+    const bits = g.rows.map(r => esc(r.p.nombre) + ' ' + r.n);
+    return `<span class="srk-s ${catCls(g.cat)}">${esc(catShort(g.cat))}</span> ${bits.join(' · ')}`;
+  }).join('<span class="srk-sep">·</span>');
+  const body = groups.map(g => {
+    const lines = g.rows.map(r => `<div class="srk-row" data-d="${r.p.dorsal}"><span class="srk-pl">${r.place}º</span><span class="dor">${r.p.dorsal}</span><span class="nm">${esc(r.p.nombre)}</span><span class="srk-n">${r.n}</span></div>`).join('');
+    return `<div class="srk-cat ${catCls(g.cat)}"><div class="srk-h">${esc(g.cat)}</div>${lines}</div>`;
+  }).join('');
+  el.hidden = false;
+  el.innerHTML = `<details class="srk-d"${wasOpen ? ' open' : ''}><summary><span class="srk-title">Ranking de scratch</span><span class="srk-sum">${sum}</span></summary><div class="srk-body">${body}</div></details>`;
 }
 
 function renderChips() {
@@ -170,14 +196,14 @@ function renderPil() {
   const st = L.withDiffs(L.standings(M).filter(fcat));
   const idx = st.findIndex(r => r.p.dorsal === S.pil), r = st[idx];
   const ra = L.standings(M).find(x => x.p.dorsal === S.pil), fin = L.isFinal(M);
-  const ninc = { c: 0, t: 0 };
+  const ninc = L.incAcc(M, p);
   const secs = M.SEC.map((s, si) => {
     let sum = 0, any = false;
     const cells = s.tramos.map(id => {
       const ti = M.tIdx[id], x = L.tramoResults(M, ti).res.find(z => z.p.dorsal === S.pil);
       if (!x.v) return `<div class="cell na"><div class="ci"><span>${esc(id)}</span></div><div class="cv">—</div><div class="cp">&nbsp;</div></div>`;
       if (x.tm === 999) return `<div class="cell"><div class="ci"><span>${esc(id)}</span></div><div class="cv" style="color:#9aa2ad">Ab.</div><div class="cp">&nbsp;</div></div>`;
-      sum += x.tm; any = true; ninc.c += x.c; ninc.t += x.t;
+      sum += x.tm; any = true;
       return `<div class="cell ${x.scratch ? (p.cat === 'Rally1' ? 's1' : 's2') : ''}"><div class="ci"><span>${esc(id)}</span><span>${tags(x)}</span></div><div class="cv num ${x.c || x.t ? 'inc' : ''}">${fmt(x.tm)}</div><div class="cp">${ord(x.pos)} · ${esc(catShort(p.cat))} ${ord(x.cpos)}</div></div>`;
     }).join('');
     const pen = p.pen[si] ? ` <span style="color:var(--red)">+${fpen(p.pen[si])}</span>` : '';
@@ -193,7 +219,7 @@ function renderPil() {
      <div><label>Posición</label><b>${ra.ab != null ? 'Ab.' : ra.n ? ord(ra.pos) : '—'}</b><small>${ra.ab != null ? T()[ra.ab].id : ra.n ? esc(catShort(p.cat)) + ' ' + ord(ra.cpos) : '&nbsp;'}</small></div>
      <div><label>Total</label><b class="num">${ra.ab != null || !ra.n ? '—' : fmt(ra.tot)}</b>${fin && ra.ab == null && ra.n ? `<small>${fmmss(ra.tot)}</small>` : ''}<small style="color:var(--red)">${ra.pen && ra.ab == null ? 'pen. +' + fpen(ra.pen) : (fin ? '' : '&nbsp;')}</small></div>
      <div><label>Dif. ant.</label><b class="num dpk">${r && r.dp != null ? fdif(r.dp) : '—'}</b><small>${r && r.d1 != null && Math.abs(r.d1 - r.dp) > 1e-6 ? '1º ' + fdif(r.d1) : '&nbsp;'}</small></div>
-     <div><label>Incid.</label><b class="${ninc.c + ninc.t ? 'inc' : ''}">${ninc.c + ninc.t}</b><small>${ninc.c} C · ${ninc.t} T</small></div>
+     <div><label>Incid.</label><b class="${ninc.c + ninc.t ? 'inc' : ''}">${ninc.c + ninc.t}</b><small>${incLabel(ninc) || '&nbsp;'}</small></div>
    </div>
    <div class="secs">${secs}${spark(p)}${pens.length ? `<div class="pnote">Penalización: ${pens.join(', ')}</div>` : ''}</div>`;
   $('pstar').onclick = () => { S.favs.has(p.dorsal) ? S.favs.delete(p.dorsal) : S.favs.add(p.dorsal); try { localStorage.setItem('rd-favs', JSON.stringify([...S.favs])); } catch {} renderAll(); };
@@ -218,6 +244,7 @@ $('tprev').onclick = () => { if (S.ti > 0) { S.ti--; S.tiManual = S.ti !== L.cur
 $('tnext').onclick = () => { if (S.ti < T().length - 1) { S.ti++; S.tiManual = S.ti !== L.curTramo(M); renderTramo(); } };
 $('daysel').onclick = e => { const b = e.target.closest('button'); if (!b) return; S.day = +b.dataset.day; S.dayManual = true; renderSalida(); };
 ['clas', 'tramo', 'salida'].forEach(id => $(id).addEventListener('click', e => { const r = e.target.closest('.row[data-d]'); if (r) openPil(+r.dataset.d); }));
+$('scratch-rank').addEventListener('click', e => { const r = e.target.closest('.srk-row[data-d]'); if (r) openPil(+r.dataset.d); });
 $('scrim').onclick = closePil;
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closePil(); });
 function swipe(el, left, right, down) {
