@@ -6,8 +6,12 @@ clave.txt
 ~$*
 *.png
 !icon-180.png
+!uploader/QR Rally Directo.png
 *.jpg
 shots/
 node_modules/
 .wrangler/
 .DS_Store
+
+# Ruta local del Excel (junto al programa del Mac)
+config.json

@@ -1,6 +1,12 @@
 #!/bin/bash
 # Rally Directo · quita el rally de la página pública (vuelve a «Sin rally en directo»).
+# Compatible con macOS 10.13 High Sierra y posteriores (bash, curl; sin JXA).
 cd "$(dirname "$0")" || exit 1
+if locale -a 2>/dev/null | grep -E -q '^es_ES\.(UTF-8|utf8)$'; then
+  export LANG=es_ES.UTF-8 LC_ALL=es_ES.UTF-8
+else
+  export LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
+fi
 SERVER="https://rally-directo.blancolang.workers.dev"
 KEY="$(tr -d '[:space:]' < clave.txt 2>/dev/null)"
 if [ -z "$KEY" ]; then echo "Falta clave.txt"; read -r -p "Pulsa Intro para cerrar"; exit 1; fi

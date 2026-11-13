@@ -1,5 +1,5 @@
 /* Rally Directo · lector de la hoja del rally (.xlsx) sin dependencias.
- * Funciona igual en el Mac (JavaScript for Automation, «osascript -l JavaScript») y en Node (pruebas).
+ * En el Mac el programa usa parser.pl (Perl 5.18). Este archivo se mantiene para las pruebas en Node.
  * Entrada: getXml(rutaDentroDelZip) -> string | null. Salida: SOLO los datos públicos del rally + avisos.
  * Si no se indica una hoja, usa la pestaña inmediatamente anterior a «Plantilla»
  * (el Excel puede tener todas las pestañas que sean; un rally nuevo se añade justo antes de «Plantilla»). */

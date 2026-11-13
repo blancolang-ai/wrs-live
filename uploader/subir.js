@@ -1,5 +1,5 @@
-/* Rally Directo · programa de subida para macOS (JavaScript for Automation, viene con el Mac: no hay que instalar nada).
- * Lo arranca «Rally Directo.command». Vigila el Excel del rally y, cada vez que se guarda, sube SOLO los datos públicos. */
+/* Rally Directo · antiguo programa JXA (ya no se usa en el Mac; se conserva por si hace falta consultarlo).
+ * El programa actual es «Rally Directo.command» + subir.pl + parser.pl (bash 3.2 + Perl 5.18 + AppleScript). */
 ObjC.import('Foundation');
 var app = Application.currentApplication(); app.includeStandardAdditions = true;
 var SERVER = 'https://rally-directo.blancolang.workers.dev';

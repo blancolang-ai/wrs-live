@@ -4,7 +4,13 @@ Este programa vigila el Excel del rally y, **cada vez que lo guardas**, sube los
 <https://blancolang-ai.github.io/rally-directo/>. Solo sube lo que se ve en la web: nombres, dorsales, coches,
 categorías, tramos, tiempos, C/T, abandonos (999) y penalizaciones. Nada más del Excel sale del Mac.
 
-**No hay que instalar nada**: usa herramientas que ya vienen con macOS (JavaScript de Automatización, `unzip` y `curl`).
+**No hay que instalar nada ni reiniciar el Mac.** Usa solo herramientas que ya vienen con macOS desde 10.13 High Sierra
+(y también en versiones posteriores): bash, Perl, `unzip`, `curl` y AppleScript. No necesita JavaScript de Automatización
+ni Python.
+
+En la carpeta hay un código QR de alta resolución, **«QR Rally Directo.png»**, que apunta a la página pública. Puedes
+imprimirlo o mostrarlo para que cada uno abra el directo en el móvil. Debajo del código pone «Rally Directo · en directo»
+y la dirección <https://blancolang-ai.github.io/rally-directo/>.
 
 ## Instalarlo (una sola vez)
 
@@ -12,10 +18,13 @@ categorías, tramos, tiempos, C/T, abandonos (999) y penalizaciones. Nada más d
    (es la llave privada para subir; no la compartas).
 2. La primera vez, haz **clic derecho (o Control + clic) sobre «Rally Directo.command» → Abrir → Abrir**.
    macOS lo pide solo la primera vez porque el programa no viene de la App Store.
-   - Si macOS dice que «no se puede abrir»: ve a **Ajustes del Sistema → Privacidad y seguridad**, baja hasta el aviso de
-     «Rally Directo.command» y pulsa **Abrir igualmente**.
+   - En macOS 13 o posterior, si dice que «no se puede abrir»: ve a **Ajustes del Sistema → Privacidad y seguridad**,
+     baja hasta el aviso de «Rally Directo.command» y pulsa **Abrir igualmente**.
+   - En High Sierra, Mojave, Catalina, Big Sur o Monterey: **Preferencias del Sistema → Seguridad y privacidad**,
+     pestaña General, y pulsa **Abrir igualmente**.
 3. Elige el Excel del rally. Puede tener el nombre y la ubicación que quieras: el programa lo recuerda
-   para las siguientes veces. Si más adelante lo mueves o lo renombras, te lo volverá a preguntar.
+   (en un archivo `config.json` junto a estos scripts) para las siguientes veces. Si más adelante lo mueves o lo
+   renombras, te lo volverá a preguntar.
 
 ## Usarlo en cada rally
 
