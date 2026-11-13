@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0b1220">
+<title>Rally en directo · WRSlot Cantabria</title>
+<meta name="description" content="Tiempos en directo de los rallies de slot WRSlot Cantabria">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+@font-face{font-family:'Barlow';font-weight:400;src:url('fonts/barlow-400.woff2') format('woff2')}
+@font-face{font-family:'Barlow';font-weight:500;src:url('fonts/barlow-500.woff2') format('woff2')}
+@font-face{font-family:'Barlow';font-weight:600;src:url('fonts/barlow-600.woff2') format('woff2')}
+@font-face{font-family:'Barlow';font-weight:700;src:url('fonts/barlow-700.woff2') format('woff2')}
+@font-face{font-family:'BC';font-weight:500;src:url('fonts/barlow-cond-500.woff2') format('woff2')}
+@font-face{font-family:'BC';font-weight:600;src:url('fonts/barlow-cond-600.woff2') format('woff2')}
+@font-face{font-family:'BC';font-weight:700;src:url('fonts/barlow-cond-700.woff2') format('woff2')}
+@font-face{font-family:'BC';font-weight:800;src:url('fonts/barlow-cond-800.woff2') format('woff2')}
+:root{
+  --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);
+  --bg:#f2f3f6;--paper:#fff;--ink:#12151c;--muted:#6b7380;--line:#e6e8ec;
+  --head:#0b1220;--accent:#e10600;
+  --r1:#e86a17;--r1-bg:#ffe2c7;--r1-ink:#b4410a;
+  --r2:#2563eb;--r2-bg:#d6e4ff;--r2-ink:#1d4ed8;
+  --red:#d71414;--up:#0a8a3a;--down:#d71414;--flash:#fff4b8;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:Barlow,system-ui,sans-serif;font-size:15px;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+button{font-family:inherit;color:inherit;border:0;background:none;padding:0;cursor:pointer}
+.num{font-variant-numeric:tabular-nums}
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:520px;margin:0 auto;background:var(--bg);position:relative;overflow:hidden}
+
+/* top bar */
+.top{background:var(--head);color:#fff;padding:calc(6px + var(--sat)) 12px 8px;display:flex;align-items:center;gap:10px;flex:none;border-bottom:3px solid var(--accent)}
+.top .t1{flex:1;min-width:0}
+.top h1{margin:0;font:800 21px/1.05 BC,sans-serif;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top .sub{font:500 12px/1.2 Barlow;color:#aab3c5;margin-top:2px;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.live{display:inline-flex;align-items:center;gap:4px;font:700 11px/1 BC;letter-spacing:.08em;color:#fff;background:var(--accent);padding:3px 6px 2px;border-radius:4px}
+.live i{width:6px;height:6px;border-radius:50%;background:#fff;animation:pulse 1.4s infinite}
+.live.fin{background:#3a4458}.live.fin i{display:none}
+@keyframes pulse{50%{opacity:.25}}
+.seg{display:flex;background:#1d2840;border-radius:9px;padding:2px;flex:none}
+.seg button{font:700 13px/1 BC;letter-spacing:.03em;padding:8px 9px 7px;border-radius:7px;color:#c8cfdd}
+.seg button.on{background:#fff;color:var(--ink)}
+.seg button.on.r1{background:var(--r1);color:#fff}
+.seg button.on.r2{background:var(--r2);color:#fff}
+
+/* views */
+main{flex:1;min-height:0;position:relative}
+.view{position:absolute;inset:0;display:none;flex-direction:column}
+.view.on{display:flex}
+.list{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--paper)}
+.bar{display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--paper);border-bottom:1px solid var(--line);flex:none;min-height:36px}
+.sel{position:relative;display:inline-flex;align-items:center;font:700 14px/1 BC;letter-spacing:.02em;background:#eef0f4;border-radius:8px;padding:6px 26px 5px 9px;flex:none}
+.sel:after{content:"";position:absolute;right:9px;top:50%;margin-top:-4px;border:5px solid transparent;border-top-color:#555;border-bottom:0}
+.sel select{position:absolute;inset:0;opacity:0;font-size:16px}
+.ticker{flex:1;min-width:0;font:500 12.5px/1.2 Barlow;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
+.ticker b{color:var(--ink);font-weight:700}
+.colh{display:grid;font:600 10.5px/1 BC;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:5px 12px 4px 12px;background:#f7f8fa;border-bottom:1px solid var(--line);flex:none}
+
+/* rows common */
+.row{display:grid;align-items:center;padding:0 12px 0 12px;border-bottom:1px solid var(--line);position:relative;background:var(--paper)}
+.row:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--cc)}
+.row.R1{--cc:var(--r1)}.row.R2{--cc:var(--r2)}
+.row.flash{animation:flash 2.4s ease-out}
+@keyframes flash{0%,30%{background:var(--flash)}100%{background:var(--paper)}}
+.row.fav .nm:after{content:"★";color:#f5b400;font-size:12px;margin-left:4px;vertical-align:1px}
+.pos{font:800 19px/1 BC;text-align:center}
+.pos small{display:block;font:700 10.5px/1 BC;margin-top:2px}
+.up{color:var(--up)}.down{color:var(--down)}.eq{color:#b5bcc7}
+.dor{width:30px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font:800 15px/1 BC;color:#fff;background:var(--cc)}
+.nm{font:700 16px/1.1 Barlow;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nm2{font:500 11.5px/1.2 Barlow;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.tot{font:700 17px/1 BC;text-align:right;letter-spacing:.01em}
+.tot small{display:block;font:700 11px/1 BC;color:var(--red);margin-top:2px}
+.dif{text-align:right;font:600 14px/1 BC}
+.dp{display:inline-block;font:700 14px/1 BC;background:#fff3c4;color:var(--ink);border-radius:5px;padding:3px 5px 2px;box-shadow:inset 0 0 0 1px #f0d77a}
+.dp.grey{background:#f1f2f5;color:#8a93a0;box-shadow:none}
+.dp.lead{background:none;box-shadow:none;color:var(--muted)}
+.dpk{background:#fff3c4;border-radius:5px;padding:2px 5px 1px;box-shadow:inset 0 0 0 1px #f0d77a}
+.dif small{display:block;font:500 11.5px/1 BC;color:var(--muted);margin-top:3px}
+.ab .nm,.ab .tot,.ab .pos{color:#9aa2ad}
+.ab .dor{background:#b7bec8}
+.inc{color:var(--red)!important}
+.tg{display:inline-block;font:800 10px/1 BC;color:#fff;background:var(--red);border-radius:3px;padding:2px 3px 1px;margin-left:3px;vertical-align:2px}
+.pend{color:#9aa2ad;font:600 13px/1 BC}
+
+/* clasificación */
+#v-clas .row,#v-clas .colh{grid-template-columns:30px 38px 1fr 84px 68px;column-gap:6px}
+#v-clas .row{height:46px}
+
+/* tramos */
+.chips{display:flex;gap:4px;overflow-x:auto;padding:6px 10px;background:var(--paper);border-bottom:1px solid var(--line);flex:none;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chips .dsep{flex:none;font:700 10px/1 BC;color:var(--muted);writing-mode:vertical-rl;transform:rotate(180deg);padding:0 1px;align-self:center;letter-spacing:.06em}
+.chip{flex:none;min-width:40px;height:28px;border-radius:7px;background:#eef0f4;font:700 13px/28px BC;text-align:center;padding:0 5px;position:relative}
+.chip.on{background:var(--head);color:#fff}
+.chip.live:after{content:"";position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.chip.na{color:#b0b6c0}
+.thead{display:flex;align-items:center;gap:6px;padding:6px 6px;background:var(--paper);border-bottom:1px solid var(--line);flex:none}
+.arrow{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 22px/1 system-ui;color:var(--ink);background:#eef0f4;flex:none}
+.arrow:disabled{opacity:.3}
+.thead .tt{flex:1;text-align:center;min-width:0}
+.thead .tt b{display:block;font:800 19px/1.05 BC;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thead .tt span{font:500 12px/1.2 Barlow;color:var(--muted)}
+.ps{font:800 10px/1 BC;background:#7c3aed;color:#fff;border-radius:3px;padding:2px 4px 1px;vertical-align:3px;margin-left:4px}
+#v-tramo .row,#v-tramo .colh{grid-template-columns:26px 36px 1fr 80px 64px 38px;column-gap:5px}
+#v-tramo .row{height:43px}
+.tm{justify-self:end;font:700 17px/1 BC;padding:5px 6px 4px;border-radius:6px;text-align:right;white-space:nowrap}
+.tm.s1{background:var(--r1-bg);box-shadow:inset 0 0 0 1.5px var(--r1)}
+.tm.s2{background:var(--r2-bg);box-shadow:inset 0 0 0 1.5px var(--r2)}
+.gral{text-align:center;font:700 14px/1 BC}
+.gral small{display:block;font:700 10px/1 BC;margin-top:2px}
+.legend{display:flex;gap:10px;align-items:center;justify-content:center;font:500 11px/1 Barlow;color:var(--muted);padding:6px 8px;background:var(--paper);flex:none;border-top:1px solid var(--line)}
+.legend span{display:inline-flex;align-items:center;gap:4px}
+.sw{width:14px;height:11px;border-radius:3px;display:inline-block}
+
+/* salida */
+.daysel{display:flex;gap:6px;padding:8px 12px;background:var(--paper);border-bottom:1px solid var(--line);flex:none}
+.daysel button{flex:1;height:34px;border-radius:9px;background:#eef0f4;font:700 14px/1 BC;letter-spacing:.02em}
+.daysel button.on{background:var(--head);color:#fff}
+.stat{padding:6px 12px;font:500 12.5px/1.35 Barlow;background:var(--paper);border-bottom:1px solid var(--line);flex:none}
+.stat div{display:flex;gap:6px;align-items:baseline}
+.stat .ok{color:var(--up);font-weight:700}.stat .wait{color:#b7791f;font-weight:700}
+.grp{font:700 11px/1 BC;letter-spacing:.07em;text-transform:uppercase;padding:6px 12px 5px;color:#fff}
+.grp.R1{background:var(--r1)}.grp.R2{background:var(--r2)}.grp.X{background:#8b94a1}
+#v-salida .row{grid-template-columns:34px 38px 1fr 120px;column-gap:6px;height:39px}
+.sn{font:800 20px/1 BC;text-align:center}
+.slot{color:#9aa2ad;font:italic 500 13px/1 Barlow}
+
+/* tab bar */
+nav{flex:none;display:flex;background:#fff;border-top:1px solid #dfe2e7;padding-bottom:var(--sab)}
+nav button{flex:1;height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font:600 11px/1 Barlow;color:#8a93a0}
+nav button svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+nav button.on{color:var(--accent)}
+
+/* piloto sheet */
+.scrim{position:absolute;inset:0;background:rgba(8,12,20,.45);opacity:0;pointer-events:none;transition:opacity .2s;z-index:20}
+.sheet{position:absolute;left:0;right:0;bottom:0;height:calc(100% - var(--sat) - 30px);background:var(--paper);border-radius:16px 16px 0 0;transform:translateY(100%);transition:transform .25s ease;z-index:21;display:flex;flex-direction:column;box-shadow:0 -8px 30px rgba(0,0,0,.2)}
+.open .scrim{opacity:1;pointer-events:auto}
+.open .sheet{transform:none}
+.grab{width:40px;height:5px;border-radius:3px;background:#d3d7de;margin:7px auto 4px}
+.ph{display:flex;align-items:center;gap:10px;padding:2px 12px 10px;border-bottom:1px solid var(--line)}
+.ph .dor{width:44px;height:36px;font-size:22px;border-radius:8px}
+.ph .who{flex:1;min-width:0}
+.ph .who b{font:800 24px/1 BC;display:block}
+.ph .who span{font:500 12.5px/1.2 Barlow;color:var(--muted)}
+.ph .nav2{display:flex;gap:6px}
+.ph .arrow{width:34px;height:34px;font-size:20px}
+.star{font-size:22px;color:#c2c8d0;width:34px;height:34px}
+.star.on{color:#f5b400}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line)}
+.kpis div{padding:8px 4px 7px;text-align:center;border-right:1px solid var(--line)}
+.kpis div:last-child{border-right:0}
+.kpis label{display:block;font:600 10px/1 BC;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.kpis b{font:800 18px/1 BC}
+.kpis small{display:block;font:600 11px/1 BC;color:var(--muted);margin-top:3px}
+.secs{flex:1;overflow-y:auto;padding:4px 10px 10px}
+.sec{margin-top:7px}
+.sec .sh{display:flex;justify-content:space-between;font:700 12px/1 BC;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:0 2px 4px}
+.sec .sh b{color:var(--ink);letter-spacing:.02em}
+.cells{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.cell{background:#f3f4f7;border-radius:8px;padding:5px 6px 5px;min-height:50px}
+.cell .ci{display:flex;justify-content:space-between;font:700 10.5px/1 BC;color:var(--muted)}
+.cell .cv{font:800 17px/1 BC;margin-top:5px}
+.cell .cp{font:600 10.5px/1 BC;color:var(--muted);margin-top:3px}
+.cell.s1{background:var(--r1-bg);box-shadow:inset 0 0 0 1.5px var(--r1)}
+.cell.s2{background:var(--r2-bg);box-shadow:inset 0 0 0 1.5px var(--r2)}
+.cell.na{opacity:.45}
+.pnote{font:600 12px/1.3 Barlow;color:var(--red);padding:8px 4px 0}
+.toast{position:absolute;left:50%;top:8px;transform:translateX(-50%);background:var(--head);color:#fff;font:600 13px/1 Barlow;padding:9px 14px;border-radius:20px;z-index:10;box-shadow:0 4px 14px rgba(0,0,0,.25);white-space:nowrap;display:none}
+.toast.on{display:block}
+
+/* estado vacío y conexión */
+.empty{position:absolute;inset:0;z-index:30;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px}
+.noRally .empty{display:flex}
+.empty .flag{width:64px;height:64px;border-radius:16px;background:var(--head);display:flex;align-items:center;justify-content:center;margin-bottom:16px;border-bottom:4px solid var(--accent)}
+.empty .flag svg{width:34px;height:34px;stroke:#fff;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.empty h2{margin:0 0 6px;font:800 26px/1.1 BC}
+.empty p{margin:0;font:500 14.5px/1.4 Barlow;color:var(--muted);max-width:290px}
+.empty small{margin-top:18px;font:500 12px/1.3 Barlow;color:#9aa2ad}
+.net{display:none;color:#ffd27a;font-weight:600}
+.offline .net{display:inline}
+.loading .empty{display:flex}.loading .empty h2,.loading .empty p{visibility:hidden}
+@media (min-width:760px){
+  body{background:#dde1e8}
+  #app{max-width:720px;box-shadow:0 0 0 1px #d3d8e0,0 10px 40px rgba(10,20,40,.12)}
+  .cells{grid-template-columns:repeat(6,1fr)}
+  .sheet{left:50%;width:620px;margin-left:-310px}
+}
+</style>
+</head>
+<body>
+<div id="app" class="loading">
+  <header class="top">
+    <div class="t1">
+      <h1 id="h-rally">Rally en directo</h1>
+      <div class="sub"><span class="live" id="live"><i></i><span>DIRECTO</span></span><span id="h-sub"></span><span class="net" id="net">· sin conexión, reintentando…</span></div>
+    </div>
+    <div class="seg" id="catseg">
+      <button data-cat="all" class="on">Todos</button><button data-cat="Rally1" class="r1">R1</button><button data-cat="Rally2" class="r2">R2</button>
+    </div>
+  </header>
+  <main>
+    <div class="toast" id="toast"></div>
+    <section class="view on" id="v-clas">
+      <div class="bar">
+        <label class="sel"><span id="aft-l">—</span><select id="aft"></select></label>
+        <div class="ticker" id="ticker"></div>
+      </div>
+      <div class="colh"><span style="text-align:center">Pos</span><span>Nº</span><span>Piloto · último tramo</span><span style="text-align:right">Total</span><span style="text-align:right;color:var(--ink)">Dif. ant.<br><span style="font-size:9.5px;color:var(--muted)">Dif. 1º</span></span></div>
+      <div class="list" id="clas"></div>
+    </section>
+    <section class="view" id="v-tramo">
+      <div class="chips" id="chips"></div>
+      <div class="thead">
+        <button class="arrow" id="tprev" aria-label="Tramo anterior">‹</button>
+        <div class="tt"><b id="t-name"></b><span id="t-sub"></span></div>
+        <button class="arrow" id="tnext" aria-label="Tramo siguiente">›</button>
+      </div>
+      <div class="colh"><span style="text-align:center">Pos</span><span>Nº</span><span>Piloto</span><span style="text-align:right">Tiempo</span><span style="text-align:right;color:var(--ink)">Dif. ant.</span><span style="text-align:center">Gral.</span></div>
+      <div class="list" id="tramo"></div>
+      <div class="legend"><span><i class="sw" style="background:var(--r1-bg);box-shadow:inset 0 0 0 1.5px var(--r1)"></i>Scratch R1</span><span><i class="sw" style="background:var(--r2-bg);box-shadow:inset 0 0 0 1.5px var(--r2)"></i>Scratch R2</span><span><b style="color:var(--red)">Rojo</b> = C/T</span><span>Desliza ⇆</span></div>
+    </section>
+    <section class="view" id="v-salida">
+      <div class="daysel" id="daysel"></div>
+      <div class="stat" id="sstat"></div>
+      <div class="list" id="salida"></div>
+    </section>
+  </main>
+  <nav id="tabs">
+    <button data-v="clas" class="on"><svg viewBox="0 0 24 24"><path d="M8 21V11H3v10zM15.5 21V4h-7v17zM21 21v-7h-5.5v7z"/></svg>Clasificación</button>
+    <button data-v="tramo"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M10 2h4M12 2v3"/></svg>Tramos</button>
+    <button data-v="salida"><svg viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>Orden de salida</button>
+  </nav>
+  <div class="empty" id="empty"><div class="flag"><svg viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg></div><h2>Sin rally en directo</h2><p>Cuando empiece el próximo rally, aquí aparecerán los tiempos tramo a tramo. La página se actualiza sola.</p><small>WRSlot Cantabria</small></div>
+  <div class="scrim" id="scrim"></div>
+  <div class="sheet" id="sheet"></div>
+</div>
+<script src="config.js"></script>
+<script src="logic.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

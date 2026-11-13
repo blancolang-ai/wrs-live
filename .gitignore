@@ -1,0 +1,13 @@
+# Nunca al repositorio público
+clave.txt
+.dev.vars
+*.xlsx
+*.xls
+~$*
+*.png
+!icon-180.png
+*.jpg
+shots/
+node_modules/
+.wrangler/
+.DS_Store

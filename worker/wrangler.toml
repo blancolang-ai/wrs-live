@@ -1,0 +1,16 @@
+name = "rally-directo"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGINS = "https://blancolang-ai.github.io"
+# UPLOAD_KEY va SOLO como secreto: «wrangler secret put UPLOAD_KEY» (y en .dev.vars, que git ignora).
+
+[[durable_objects.bindings]]
+name = "STORE"
+class_name = "Store"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Store"]
