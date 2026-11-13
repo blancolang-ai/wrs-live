@@ -91,7 +91,7 @@ chmod 0700, $tmp;
 my $hdr = File::Spec->catfile($tmp, 'cabecera.txt');
 {
   open my $hf, '>:raw', $hdr or die "No puedo escribir la cabecera\n";
-  print $hf "X-Upload-Key: $key\n";
+  print $hf "header = \"X-Upload-Key: $key\"\n";
   close $hf;
   chmod 0600, $hdr;
 }
@@ -132,7 +132,7 @@ sub post_json {
     exec '/usr/bin/curl', '-sS', '-m', '20',
       '-o', $resp,
       '-w', '%{http_code}',
-      '-H', '@' . $hdr,
+      '-K', $hdr,
       '-H', 'Content-Type: application/json',
       '--data-binary', '@' . $datos,
       $url
