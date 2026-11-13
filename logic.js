@@ -85,6 +85,12 @@
   }
   function curTramo(m) { for (let ti = m.T.length - 1; ti >= 0; ti--) if (m.P.some(p => vis(m, ti, p.dorsal))) return ti; return 0; }
   const hasTimes = m => m.P.some(p => Object.keys(p.t).length > 0);
+  /* Índices de tramos con al menos un tiempo (o abandono), en orden de carrera. */
+  function tramosWithTimes(m) {
+    const out = [];
+    for (let ti = 0; ti < m.T.length; ti++) if (m.P.some(p => vis(m, ti, p.dorsal))) out.push(ti);
+    return out;
+  }
   const isFinal = m => m.T.length > 0 && hasTimes(m) && m.T.every((t, ti) => tramoComplete(m, ti));
   const isLive = m => hasTimes(m) && !tramoComplete(m, curTramo(m));
 
@@ -194,6 +200,6 @@
   const catShort = c => c === R1 ? 'R1' : c === 'Rally2' ? 'R2' : String(c).slice(0, 3);
   const catCls = c => c === R1 ? 'R1' : 'R2';
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
-  const api = { model, vis, raw, abandonIndex, tramoComplete, curTramo, hasTimes, isFinal, isLive, standings, withDiffs, tramoResults, startOrder, expectedOrder, changes, incCount, incBadges, incAcc, incLabel, scratchRanking, decs, fmt, fmmss, fdif, fpen, ord, catShort, catCls, esc, dayOfSec };
+  const api = { model, vis, raw, abandonIndex, tramoComplete, curTramo, hasTimes, tramosWithTimes, isFinal, isLive, standings, withDiffs, tramoResults, startOrder, expectedOrder, changes, incCount, incBadges, incAcc, incLabel, scratchRanking, decs, fmt, fmmss, fdif, fpen, ord, catShort, catCls, esc, dayOfSec };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.RD = api;
 })(typeof window !== 'undefined' ? window : globalThis);

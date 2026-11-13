@@ -42,13 +42,23 @@ function renderHeader() {
 
 function renderClas() {
   const sel = $('aft'); sel.innerHTML = '';
-  const ct = L.curTramo(M), live = L.isLive(M), Tt = T();
-  if (live) sel.add(new Option('Provisional (en directo)', 'live'));
-  for (let ti = Tt.length - 1; ti >= 0; ti--) if (L.tramoComplete(M, ti)) sel.add(new Option('Tras ' + Tt[ti].id + ' · ' + Tt[ti].name, String(ti)));
-  if (S.after != null && !L.tramoComplete(M, S.after)) S.after = null;
-  const lim = S.after == null ? (live ? Tt.length - 1 : ct) : S.after;
-  sel.value = S.after == null ? (live ? 'live' : String(ct)) : String(S.after);
-  $('aft-l').textContent = !L.hasTimes(M) ? 'Sin tiempos' : (S.after == null && live) ? 'Provisional · ' + Tt[ct].id : 'Tras ' + Tt[lim].id;
+  const ct = L.curTramo(M), Tt = T();
+  const timed = L.tramosWithTimes(M);
+  const newest = timed.length ? timed[timed.length - 1] : ct;
+  if (S.after != null && !timed.includes(S.after)) S.after = null;
+  sel.add(new Option('En directo', 'live'));
+  for (let i = timed.length - 1; i >= 0; i--) {
+    const ti = timed[i], lab = L.tramoComplete(M, ti) ? ('Tras ' + Tt[ti].id + ' · ' + Tt[ti].name) : ('Tras ' + Tt[ti].id + ' · provisional');
+    sel.add(new Option(lab, String(ti)));
+  }
+  const lim = S.after == null ? newest : S.after;
+  sel.value = S.after == null ? 'live' : String(S.after);
+  const aftLab = !timed.length ? 'Sin tiempos' : S.after == null ? 'En directo' : (L.tramoComplete(M, S.after) ? ('Tras ' + Tt[lim].id + ' · ' + Tt[lim].name) : ('Tras ' + Tt[lim].id + ' · provisional'));
+  $('aft-l').textContent = aftLab;
+  const seq = [null].concat(timed.slice().reverse());
+  const seqI = seq.findIndex(x => x === S.after);
+  $('aft-prev').disabled = !timed.length || seqI >= seq.length - 1;
+  $('aft-next').disabled = !timed.length || seqI <= 0;
   if (L.isFinal(M)) { const w = L.standings(M).filter(fcat)[0]; $('ticker').innerHTML = w ? `Ganador${S.cat === 'all' ? '' : ' ' + esc(catShort(S.cat))}: <b>${esc(w.p.nombre)}</b> · ${fmt(w.tot)} s · ${fmmss(w.tot)}` : ''; }
   else if (lastNew) { const p = M.byD[lastNew.d], v = p && L.raw(M, p, lastNew.ti); $('ticker').innerHTML = !v ? '' : v[0] === 999 ? `<b>${esc(p.nombre)}</b> abandona en ${Tt[lastNew.ti].id}` : `Último: <b>${Tt[lastNew.ti].id} · ${esc(p.nombre)}</b> ${fmt(v[0])}`; }
   else if (L.hasTimes(M)) { const n = M.P.filter(p => L.vis(M, ct, p.dorsal)).length; $('ticker').innerHTML = `<b>${Tt[ct].id}</b> · ${n} tiempo${n === 1 ? '' : 's'}`; }
@@ -242,7 +252,16 @@ function renderAll() {
 /* ---------- eventos ---------- */
 $('tabs').onclick = e => { const b = e.target.closest('button'); if (!b) return; S.view = b.dataset.v; closePil(); renderAll(); };
 $('catseg').onclick = e => { const b = e.target.closest('button'); if (!b) return; S.cat = b.dataset.cat; renderAll(); };
-$('aft').onchange = e => { const v = e.target.value, ct = L.curTramo(M); S.after = (v === 'live') ? null : (+v === ct && L.tramoComplete(M, ct) ? null : +v); renderClas(); };
+$('aft').onchange = e => { const v = e.target.value; S.after = (v === 'live') ? null : +v; renderClas(); };
+function stepAfter(dir) {
+  if (!M) return;
+  const timed = L.tramosWithTimes(M), seq = [null].concat(timed.slice().reverse());
+  const i = seq.findIndex(x => x === S.after) + dir;
+  if (i < 0 || i >= seq.length) return;
+  S.after = seq[i]; renderClas();
+}
+$('aft-prev').onclick = () => stepAfter(1);
+$('aft-next').onclick = () => stepAfter(-1);
 $('chips').onclick = e => { const b = e.target.closest('.chip'); if (!b) return; S.ti = +b.dataset.ti; S.tiManual = S.ti !== L.curTramo(M); renderTramo(); };
 $('tprev').onclick = () => { if (S.ti > 0) { S.ti--; S.tiManual = S.ti !== L.curTramo(M); renderTramo(); } };
 $('tnext').onclick = () => { if (S.ti < T().length - 1) { S.ti++; S.tiManual = S.ti !== L.curTramo(M); renderTramo(); } };

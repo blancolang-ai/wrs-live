@@ -202,3 +202,21 @@ test('4 incidencias en un salto (C+T) y mezcla con abandono 999: no se abandona 
   const tr0 = L.tramoResults(m3, 0).res.find(x => x.p.dorsal === 12);
   assert.equal(tr0.tm, 999); assert.equal(tr0.c, 3); assert.equal(tr0.t, 1); assert.equal(tr0.scratch, false);
 });
+
+test('tramosWithTimes incluye tramos incompletos; la clasificación hasta ese tramo deja pendientes a quienes no tienen tiempo', () => {
+  const d = synth({ upTo: 3 });
+  delete d.pilotos[0].t.TC3; delete d.pilotos[4].t.TC3;
+  const m = L.model(d);
+  assert.deepEqual(L.tramosWithTimes(m), [0, 1, 2]);
+  assert.equal(L.tramoComplete(m, 2), false);
+  assert.equal(L.tramoComplete(m, 1), true);
+  const st = L.standings(m, 2);
+  assert.deepEqual(st.slice(0, 3).map(r => r.n), [3, 3, 3]);
+  assert.deepEqual(st.slice(3).map(r => r.n), [2, 2]);
+  const st2 = L.standings(m, 1);
+  assert.ok(st2.every(r => r.n === 2 && r.ab == null));
+  const empty = synth({ upTo: 0 });
+  empty.pilotos.forEach(p => { p.t = {}; });
+  assert.deepEqual(L.tramosWithTimes(L.model(empty)), []);
+  assert.deepEqual(L.tramosWithTimes(L.model(synth({ upTo: 2 }))), [0, 1]);
+});

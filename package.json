@@ -1,6 +1,6 @@
 {
   "name": "rally-directo",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "private": true,
   "scripts": {
     "test": "node --test test/logic.test.mjs test/parser.test.mjs test/uploader.test.mjs test/perl-parser.test.mjs test/perl-uploader.test.mjs test/version.test.mjs && cd worker && npm test"
