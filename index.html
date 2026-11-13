@@ -10,16 +10,16 @@
 <meta name="description" content="Tiempos en directo de los rallies de slot WRSlot Cantabria">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
-<link rel="manifest" href="manifest.webmanifest">
+<link rel="manifest" href="manifest.webmanifest?v=1.2.3">
 <style>
-@font-face{font-family:'Barlow';font-weight:400;src:url('fonts/barlow-400.woff2') format('woff2')}
-@font-face{font-family:'Barlow';font-weight:500;src:url('fonts/barlow-500.woff2') format('woff2')}
-@font-face{font-family:'Barlow';font-weight:600;src:url('fonts/barlow-600.woff2') format('woff2')}
-@font-face{font-family:'Barlow';font-weight:700;src:url('fonts/barlow-700.woff2') format('woff2')}
-@font-face{font-family:'BC';font-weight:500;src:url('fonts/barlow-cond-500.woff2') format('woff2')}
-@font-face{font-family:'BC';font-weight:600;src:url('fonts/barlow-cond-600.woff2') format('woff2')}
-@font-face{font-family:'BC';font-weight:700;src:url('fonts/barlow-cond-700.woff2') format('woff2')}
-@font-face{font-family:'BC';font-weight:800;src:url('fonts/barlow-cond-800.woff2') format('woff2')}
+@font-face{font-family:'Barlow';font-weight:400;src:url('fonts/barlow-400.woff2?v=1.2.3') format('woff2')}
+@font-face{font-family:'Barlow';font-weight:500;src:url('fonts/barlow-500.woff2?v=1.2.3') format('woff2')}
+@font-face{font-family:'Barlow';font-weight:600;src:url('fonts/barlow-600.woff2?v=1.2.3') format('woff2')}
+@font-face{font-family:'Barlow';font-weight:700;src:url('fonts/barlow-700.woff2?v=1.2.3') format('woff2')}
+@font-face{font-family:'BC';font-weight:500;src:url('fonts/barlow-cond-500.woff2?v=1.2.3') format('woff2')}
+@font-face{font-family:'BC';font-weight:600;src:url('fonts/barlow-cond-600.woff2?v=1.2.3') format('woff2')}
+@font-face{font-family:'BC';font-weight:700;src:url('fonts/barlow-cond-700.woff2?v=1.2.3') format('woff2')}
+@font-face{font-family:'BC';font-weight:800;src:url('fonts/barlow-cond-800.woff2?v=1.2.3') format('woff2')}
 :root{
   --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);
   --bg:#f2f3f6;--paper:#fff;--ink:#12151c;--muted:#6b7380;--line:#e6e8ec;
@@ -275,8 +275,9 @@ nav button.on{color:var(--accent)}
   <div class="scrim" id="scrim"></div>
   <div class="sheet" id="sheet"></div>
 </div>
-<script src="config.js"></script>
-<script src="logic.js"></script>
-<script src="app.js"></script>
+<script>window.RD_BUILD='1.2.3';</script>
+<script src="config.js?v=1.2.3"></script>
+<script src="logic.js?v=1.2.3"></script>
+<script src="app.js?v=1.2.3"></script>
 </body>
 </html>

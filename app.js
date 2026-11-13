@@ -283,6 +283,24 @@ function applyData(j) {
   if (flashD.size) setTimeout(() => { flashD = new Set(); document.querySelectorAll('.row.flash').forEach(r => r.classList.remove('flash')); }, 2600);
 }
 let timer = null, failures = 0;
+const BUILD = window.RD_BUILD || '';
+let lastInteract = Date.now();
+['pointerdown', 'keydown', 'touchstart', 'scroll', 'change'].forEach(ev => document.addEventListener(ev, () => { lastInteract = Date.now(); }, { passive: true, capture: true }));
+async function checkBuild() {
+  if (!BUILD) return;
+  try {
+    const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) return;
+    const j = await r.json();
+    if (!j || !j.version || j.version === BUILD) return;
+    const busy = $('app').classList.contains('open') || (Date.now() - lastInteract) < 15000;
+    if (busy) return;
+    try { if (sessionStorage.getItem('rd-build-reload') === j.version) return; sessionStorage.setItem('rd-build-reload', j.version); } catch (e) {}
+    const u = new URL(location.href);
+    u.searchParams.set('v', j.version);
+    location.replace(u.toString());
+  } catch (e) {}
+}
 async function poll() {
   clearTimeout(timer);
   try {
@@ -293,9 +311,10 @@ async function poll() {
     failures++; if (failures >= 2 || !M) $('app').classList.add('offline');
     if ($('app').classList.contains('loading') && failures >= 2) { $('app').classList.remove('loading'); $('app').classList.add('noRally'); }
   }
+  checkBuild();
   if (!document.hidden) timer = setTimeout(poll, failures ? Math.min(30000, POLL_MS * (1 + failures)) : POLL_MS);
 }
 document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); else clearTimeout(timer); });
 window.addEventListener('online', poll);
-window.__rd = { applyData, S, get M() { return M; } };
+window.__rd = { applyData, S, get M() { return M; }, BUILD };
 poll();
