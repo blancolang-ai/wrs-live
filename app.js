@@ -210,8 +210,8 @@ function renderPil() {
       sum += x.tm; any = true;
       return `<div class="cell ${x.scratch ? (p.cat === 'Rally1' ? 's1' : 's2') : ''}"><div class="ci"><span>${esc(id)}</span><span>${tags(x)}</span></div><div class="cv num ${x.c || x.t ? 'inc' : ''}">${fmt(x.tm)}</div><div class="cp">${ord(x.pos)} · ${esc(catShort(p.cat))} ${ord(x.cpos)}</div></div>`;
     }).join('');
-    const pen = p.pen[si] ? ` <span style="color:var(--red)">+${fpen(p.pen[si])}</span>` : '';
-    return `<div class="sec"><div class="sh"><span>${esc(s.name)}</span><span>Suma <b class="num">${any ? fmt(Math.round(sum * 1000) / 1000) : '—'}</b>${pen}</span></div><div class="cells">${cells}</div></div>`;
+    const pen = p.pen[si] ? `<span class="pen">+${fpen(p.pen[si])}</span>` : '';
+    return `<div class="sec"><div class="sh"><span>${esc(s.name)}</span></div><div class="cells">${cells}</div><div class="suma"><span>Suma</span><span class="sv"><b class="num">${any ? fmt(Math.round(sum * 1000) / 1000) : '—'}</b>${pen}</span></div></div>`;
   }).join('');
   const pens = p.pen.map((v, i) => v ? `+${fpen(v)} en ${esc(M.SEC[i].name)}` : null).filter(Boolean);
   const cc = ccol(p.cat);
