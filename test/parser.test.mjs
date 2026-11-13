@@ -202,3 +202,22 @@ test('incidencias acumuladas distintas del recuento: avisa y no falla', () => {
   assert.equal(w.length, 1);
   assert.match(w[0], /Dorsal 2: incidencias acumuladas Excel=99, calculadas=1/);
 });
+
+function miniCT({ cHdr = 'C.', tHdr = 'T.', cVal = 1, tVal = 0 } = {}) {
+  const h = ['Pos.', 'Dorsal', 'Piloto', 'Coche', 'Categoría', 'Pesos', 'Incidencias acumuladas', 'TC1 Uno 10 km', cHdr, tHdr, 'Suma', 'Total Rally', 'Penalizaciones'];
+  return [
+    ['Leyenda:'], ['Pista Sintética', null, 46000, 'Indidencia'], [],
+    ['Rally Prueba. Día 1'], [],
+    h,
+    [1, 1, 'Ana', 'Coche X', 'Rally1', '33/90', (typeof cVal === 'number' ? cVal : 1) + (typeof tVal === 'number' ? tVal : 0), 101, cVal, tVal, 101, 101, 0],
+  ];
+}
+test('C/T se leen con cabecera «C»/«T», «Costado»/«Techo» o cabecera vacía (celdas combinadas)', () => {
+  for (const hdr of [{ cHdr: 'C', tHdr: 'T' }, { cHdr: 'Costado', tHdr: 'Techo' }, { cHdr: '', tHdr: '' }, { cHdr: 'C ', tHdr: 'T.' }]) {
+    const { data, warnings } = P.parse(book(miniCT({ ...hdr, cVal: 1, tVal: 0 })));
+    assert.deepEqual(data.pilotos[0].t.TC1, [101, 1, 0], JSON.stringify(hdr));
+    assert.ok(!warnings.some(w => /sin columnas C/.test(w)), 'aviso inesperado con ' + JSON.stringify(hdr) + ': ' + warnings.join('; '));
+  }
+  const x = P.parse(book(miniCT({ cHdr: 'C', tHdr: 'T', cVal: 'x', tVal: 0 })));
+  assert.deepEqual(x.data.pilotos[0].t.TC1, [101, 1, 0]);
+});

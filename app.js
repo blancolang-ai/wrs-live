@@ -73,7 +73,6 @@ function renderClas() {
     else if (isPend) { const nx = r.last == null ? 0 : r.last + 1; l2 = Tt[nx] ? `<span style="color:#b7791f;font-weight:600">${Tt[nx].id} por salir</span>` : ''; }
     else if (r.last != null) { const x = L.tramoResults(M, r.last).res.find(z => z.p.dorsal === p.dorsal); l2 = `${Tt[r.last].id} <span class="${x.c || x.t ? 'inc' : ''}">${fmt(x.tm)}</span> · ${ord(S.cat === 'all' ? x.pos : x.cpos)}${tags(x)}`; }
     const acc = incLabel({ c: r.incC || 0, t: r.incT || 0 });
-    if (acc) l2 = (l2 ? l2 + ' · ' : '') + `<span class="acci">${acc}</span>`;
     const tot = r.ab != null ? 'Ab.' : (r.n ? fmt(r.tot) : '—');
     const pen = (r.pen && r.ab == null ? `<small>pen. +${fpen(r.pen)}</small>` : '') + (fin && r.ab == null && r.n ? `<small style="color:var(--muted);font-weight:600">${fmmss(r.tot)}</small>` : '');
     const sub = x => x.d1 != null && Math.abs(x.d1 - x.dp) > 1e-6 ? '1º ' + fdif(x.d1) : '';
@@ -82,6 +81,7 @@ function renderClas() {
     return (isPend && r === pendL[0] ? sep : '') + `<div class="row ${catCls(p.cat)} ${r.ab != null ? 'ab' : ''} ${S.favs.has(p.dorsal) ? 'fav' : ''} ${flashD.has(p.dorsal) ? 'flash' : ''}" data-d="${p.dorsal}">
       <div class="pos">${r.ab != null ? '–' : pos}${ch}</div><div class="dor">${p.dorsal}</div>
       <div style="min-width:0"><div class="nm">${esc(p.nombre)}</div><div class="nm2">${l2}</div></div>
+      <div class="incid num">${acc ? `<span class="acci">${acc}</span>` : ''}</div>
       <div class="tot num" ${isPend ? 'style="color:#8a93a0"' : ''}>${tot}${pen}</div><div class="dif num">${dif}</div></div>`;
   }).join('');
   renderScratchRank(lim);

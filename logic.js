@@ -37,11 +37,10 @@
     return parts.join(' · ');
   }
   /* Los 2 primeros puestos de scratch por categoría (empates comparten puesto; máx. 3 líneas).
-     Solo tramos completos, con la misma regla de scratch que el sombreado. */
+     Misma regla que el sombreado: el mejor tiempo de la categoría en cada tramo, también en directo (sin esperar a que terminen todos). */
   function scratchRanking(m, limit = m.T.length - 1) {
     const n = {};
     for (let ti = 0; ti <= limit; ti++) {
-      if (!tramoComplete(m, ti)) continue;
       tramoResults(m, ti).res.forEach(r => { if (r.scratch) n[r.p.dorsal] = (n[r.p.dorsal] || 0) + 1; });
     }
     return m.CATS.map(cat => {

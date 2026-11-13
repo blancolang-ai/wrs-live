@@ -174,7 +174,23 @@ var RallyParser = (function () {
     return { num: num, name: name, km: km, ps: ps, surf: surf };
   }
 
-  var KNOWN = /^(Pos\.|Dorsal|Piloto|Coche|Categoría|Pesos|Incidencias acumuladas|C\.|T\.|Suma|SUMA .*|Total Rally.*|Dif\. Ant\.|Dif\.1º\.|Penalizaciones)$/i;
+  var KNOWN = /^(Pos\.|Dorsal|Piloto|Coche|Categoría|Pesos|Incidencias acumuladas|C\.?|T\.?|Costados?|Techos?|Suma|SUMA .*|Total Rally.*|Dif\. Ant\.|Dif\.1º\.|Penalizaciones)$/i;
+  /* Cabecera de columna C/T: «C.», «C», «Costado», «T.», «Techo», etc. */
+  function ctKey(v) {
+    return norm(v).toLowerCase().replace(/[.\u00B7\u2022\uFF0E]/g, '').replace(/\s+/g, '');
+  }
+  function isCHdr(v) { var s = ctKey(v); return s === 'c' || s === 'costado' || s === 'costados'; }
+  function isTHdr(v) { var s = ctKey(v); return s === 't' || s === 'techo' || s === 'techos'; }
+  function isOtherHdr(v) { v = norm(v); return !!(v && (KNOWN.test(v) && !isCHdr(v) && !isTHdr(v) || /^TC\s*\d+/i.test(v))); }
+  /* Tras un TC: C. y T. en las dos columnas siguientes; si la cabecera va vacía (celdas combinadas) o dice solo «C»/«T», también. */
+  function ctCols(h, j) {
+    var n1 = h[j + 1] || '', n2 = h[j + 2] || '';
+    var cc = isCHdr(n1) ? j + 1 : null, ct = isTHdr(n2) ? j + 2 : null;
+    if (cc == null && isCHdr(n2)) cc = j + 2;
+    if (ct == null && isTHdr(n1)) ct = j + 1;
+    if (cc == null && ct == null && !isOtherHdr(n1) && !isOtherHdr(n2)) { cc = j + 1; ct = j + 2; }
+    return { cc: cc, ct: ct };
+  }
 
   function parse(getXml, opts) {
     opts = opts || {};
@@ -205,7 +221,7 @@ var RallyParser = (function () {
         var v = h[j];
         if (/^TC\s*\d+/i.test(v)) {
           var pt = parseTramo(hr[j]);
-          var cc = h[j + 1] === 'C.' ? j + 1 : null, ct = h[j + 2] === 'T.' ? j + 2 : null;
+          var cols = ctCols(h, j), cc = cols.cc, ct = cols.ct;
           if (cc === null || ct === null) warn.push(title + ': TC' + pt.num + ' sin columnas C./T.');
           pt.label = norm(hr[j]); pt.cT = j; pt.cC = cc; pt.cTe = ct; tramos.push(pt);
         } else if (v && !KNOWN.test(v)) warn.push(title + ': columna no reconocida «' + v + '» (se ignora)');

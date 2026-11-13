@@ -93,8 +93,10 @@ main{flex:1;min-height:0;position:relative}
 .pend{color:#9aa2ad;font:600 13px/1 BC}
 
 /* clasificación */
-#v-clas .row,#v-clas .colh{grid-template-columns:30px 38px 1fr 84px 68px;column-gap:6px}
+#v-clas .row,#v-clas .colh{grid-template-columns:28px 34px 1fr 52px 76px 58px;column-gap:5px}
 #v-clas .row{min-height:46px;height:auto;padding-top:5px;padding-bottom:5px;align-items:center}
+#v-clas .incid{text-align:right;line-height:1.15}
+#v-clas .incid .acci{display:inline-block;font:700 11px/1.2 BC;white-space:normal}
 
 /* tramos */
 .chips{display:flex;gap:4px;overflow-x:auto;padding:6px 10px;background:var(--paper);border-bottom:1px solid var(--line);flex:none;scrollbar-width:none}
@@ -243,7 +245,7 @@ nav button.on{color:var(--accent)}
         <div class="ticker" id="ticker"></div>
       </div>
       <div id="scratch-rank" class="srk" hidden></div>
-      <div class="colh"><span style="text-align:center">Pos</span><span>Nº</span><span>Piloto · último tramo</span><span style="text-align:right">Total</span><span style="text-align:right;color:var(--ink)">Dif. ant.<br><span style="font-size:9.5px;color:var(--muted)">Dif. 1º</span></span></div>
+      <div class="colh"><span style="text-align:center">Pos</span><span>Nº</span><span>Piloto · último tramo</span><span style="text-align:right">Incid.<br><span style="font-size:9.5px;color:var(--muted)">acum.</span></span><span style="text-align:right">Total</span><span style="text-align:right;color:var(--ink)">Dif. ant.<br><span style="font-size:9.5px;color:var(--muted)">Dif. 1º</span></span></div>
       <div class="list" id="clas"></div>
     </section>
     <section class="view" id="v-tramo">

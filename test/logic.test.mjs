@@ -113,3 +113,26 @@ test('ranking de scratch: top 2 por categoría, empates compartiendo puesto y va
   assert.equal(r1.rows.length, 3);
   assert.ok(r1.rows.every(r => r.place === 1 && r.n === 2));
 });
+
+test('scratch en directo: se marca el mejor de la categoría sin esperar a que terminen todos, y se mueve si alguien lo bate', () => {
+  const d = synth({ upTo: 1 });
+  d.pilotos.forEach(p => { if (p.dorsal !== 1 && p.dorsal !== 11) delete p.t.TC1; });
+  const m = L.model(d);
+  assert.equal(L.tramoComplete(m, 0), false);
+  const tr = L.tramoResults(m, 0);
+  assert.equal(tr.res.find(r => r.p.dorsal === 1).scratch, true);
+  assert.equal(tr.res.find(r => r.p.dorsal === 11).scratch, true);
+  assert.equal(tr.res.find(r => r.p.dorsal === 2).v, false);
+  assert.equal(tr.res.find(r => r.p.dorsal === 2).scratch, false);
+  const d2 = synth({ upTo: 1 });
+  d2.pilotos.forEach(p => { if (p.dorsal !== 1 && p.dorsal !== 2 && p.dorsal !== 11) delete p.t.TC1; });
+  const alfa = d2.pilotos.find(p => p.dorsal === 1).t.TC1[0];
+  d2.pilotos.find(p => p.dorsal === 2).t.TC1[0] = alfa - 1;
+  const m2 = L.model(d2), tr2 = L.tramoResults(m2, 0);
+  assert.equal(L.tramoComplete(m2, 0), false);
+  assert.equal(tr2.res.find(r => r.p.dorsal === 2).scratch, true);
+  assert.equal(tr2.res.find(r => r.p.dorsal === 1).scratch, false);
+  const r1 = L.scratchRanking(m2, 0).find(g => g.cat === 'Rally1');
+  assert.ok(r1.rows.some(r => r.p.dorsal === 2 && r.n === 1));
+  assert.ok(!r1.rows.some(r => r.p.dorsal === 1));
+});

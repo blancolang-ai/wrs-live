@@ -369,7 +369,38 @@ sub parse_tramo {
   return { num => $num, name => $rest, km => $km, ps => $ps, surf => $surf };
 }
 
-my $KNOWN = qr/^(Pos\.|Dorsal|Piloto|Coche|Categoría|Pesos|Incidencias acumuladas|C\.|T\.|Suma|SUMA .*|Total Rally.*|Dif\. Ant\.|Dif\.1º\.|Penalizaciones)$/i;
+my $KNOWN = qr/^(Pos\.|Dorsal|Piloto|Coche|Categoría|Pesos|Incidencias acumuladas|C\.?|T\.?|Costados?|Techos?|Suma|SUMA .*|Total Rally.*|Dif\. Ant\.|Dif\.1º\.|Penalizaciones)$/i;
+
+sub ct_key {
+  my ($v) = @_;
+  my $s = lc norm($v);
+  $s =~ s/[.\x{00B7}\x{2022}\x{FF0E}]//g;
+  $s =~ s/\s+//g;
+  return $s;
+}
+sub is_c_hdr { my $s = ct_key($_[0]); return $s eq 'c' || $s eq 'costado' || $s eq 'costados'; }
+sub is_t_hdr { my $s = ct_key($_[0]); return $s eq 't' || $s eq 'techo' || $s eq 'techos'; }
+sub is_other_hdr {
+  my ($v) = @_;
+  $v = norm($v);
+  return 0 if $v eq '';
+  return 1 if $v =~ /^TC\s*\d+/i;
+  return 1 if $v =~ $KNOWN && !is_c_hdr($v) && !is_t_hdr($v);
+  return 0;
+}
+sub ct_cols {
+  my ($h, $j) = @_;
+  my $n1 = defined $h->[$j + 1] ? $h->[$j + 1] : '';
+  my $n2 = defined $h->[$j + 2] ? $h->[$j + 2] : '';
+  my $cc = is_c_hdr($n1) ? $j + 1 : undef;
+  my $ct = is_t_hdr($n2) ? $j + 2 : undef;
+  $cc = $j + 2 if !defined $cc && is_c_hdr($n2);
+  $ct = $j + 1 if !defined $ct && is_t_hdr($n1);
+  if (!defined $cc && !defined $ct && !is_other_hdr($n1) && !is_other_hdr($n2)) {
+    $cc = $j + 1; $ct = $j + 2;
+  }
+  return ($cc, $ct);
+}
 
 # Fecha Excel: serial 0 = 1899-12-30, como Date.UTC(1899,11,30) + serial*86400000 en JS.
 sub _is_leap {
@@ -470,8 +501,7 @@ sub parse {
       my $v = $h[$j];
       if ($v =~ /^TC\s*\d+/i) {
         my $pt = parse_tramo($hr->[$j]);
-        my $cc = (defined $h[$j + 1] && $h[$j + 1] eq 'C.') ? $j + 1 : undef;
-        my $ct = (defined $h[$j + 2] && $h[$j + 2] eq 'T.') ? $j + 2 : undef;
+        my ($cc, $ct) = ct_cols(\@h, $j);
         if (!defined $cc || !defined $ct) {
           push @warn, $title . ': TC' . $pt->{num} . ' sin columnas C./T.';
         }

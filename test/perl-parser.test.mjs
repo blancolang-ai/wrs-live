@@ -201,3 +201,22 @@ test('Perl = JS: recuento C/T (x, número) e incidencias acumuladas (aviso si no
   const r = compare(bad);
   assert.ok(r.js.warnings.some(w => /Dorsal 2: incidencias acumuladas Excel=99, calculadas=1/.test(w)));
 });
+
+function miniCT({ cHdr = 'C.', tHdr = 'T.', cVal = 1, tVal = 0 } = {}) {
+  const h = ['Pos.', 'Dorsal', 'Piloto', 'Coche', 'Categoría', 'Pesos', 'Incidencias acumuladas', 'TC1 Uno 10 km', cHdr, tHdr, 'Suma', 'Total Rally', 'Penalizaciones'];
+  return [
+    ['Leyenda:'], ['Pista Sintética', null, 46000, 'Indidencia'], [],
+    ['Rally Prueba. Día 1'], [],
+    h,
+    [1, 1, 'Ana', 'Coche X', 'Rally1', '33/90', (typeof cVal === 'number' ? cVal : 1) + (typeof tVal === 'number' ? tVal : 0), 101, cVal, tVal, 101, 101, 0],
+  ];
+}
+test('Perl = JS: C/T con cabecera «C»/«T», «Costado»/«Techo» o vacía', () => {
+  for (const hdr of [{ cHdr: 'C', tHdr: 'T' }, { cHdr: 'Costado', tHdr: 'Techo' }, { cHdr: '', tHdr: '' }, { cHdr: 'C ', tHdr: 'T.' }]) {
+    const { js } = compare(miniCT({ ...hdr, cVal: 1, tVal: 0 }));
+    assert.deepEqual(js.data.pilotos[0].t.TC1, [101, 1, 0], JSON.stringify(hdr));
+    assert.ok(!js.warnings.some(w => /sin columnas C/.test(w)));
+  }
+  const { js } = compare(miniCT({ cHdr: 'C', tHdr: 'T', cVal: 'x', tVal: 0 }));
+  assert.deepEqual(js.data.pilotos[0].t.TC1, [101, 1, 0]);
+});
