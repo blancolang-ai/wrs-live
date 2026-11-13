@@ -221,3 +221,19 @@ test('C/T se leen con cabecera «C»/«T», «Costado»/«Techo» o cabecera vac
   const x = P.parse(book(miniCT({ cHdr: 'C', tHdr: 'T', cVal: 'x', tVal: 0 })));
   assert.deepEqual(x.data.pilotos[0].t.TC1, [101, 1, 0]);
 });
+test('avisa si hay tiempo en el tramo de la 4ª incidencia (la web lo trata como abandono)', () => {
+  const rows = sheet({
+    tcs: [['TC1 Uno 10 km', 'TC2 Dos 5 km', 'TC3 Tres 8 km', 'TC4 Cuatro 6 km']],
+    days: [1],
+    cell: (si, ti, d) => (d === 1 ? 101 + ti : undefined)
+  });
+  // Ana: 1 C en cada uno de TC1–TC4 (acc col = 4)
+  // header fila 5; Ana fila 6; cols: 8=C TC1, 11=C TC2, 14=C TC3, 17=C TC4, 6=inc acc
+  rows[6][8] = 1; rows[6][11] = 1; rows[6][14] = 1; rows[6][17] = 1; rows[6][6] = 4;
+  const { data, warnings } = P.parse(book(rows));
+  const ana = data.pilotos.find(p => p.dorsal === 1);
+  assert.deepEqual(ana.t.TC4, [104, 1, 0]); // el lector no borra el tiempo; avisa
+  const w = warnings.filter(x => /4ª incidencia/.test(x));
+  assert.equal(w.length, 1);
+  assert.match(w[0], /Dorsal 1: tiempo en TC4 con la 4ª incidencia \(abandono\); la web no lo cuenta/);
+});

@@ -685,6 +685,20 @@ sub parse {
   }
 
   my @pilotos = map { $pil{$_} } @order;
+  for my $p (@pilotos) {
+    my $acc = 0;
+    for my $t (@outT) {
+      my $tid = $t->{id};
+      my $tv = $p->{t}{$tid};
+      next if !$tv;
+      $acc += ($tv->[1] || 0) + ($tv->[2] || 0);
+      last if $tv->[0] == 999;
+      if ($acc >= 4) {
+        push @warn, 'Dorsal ' . $p->{dorsal} . ': tiempo en ' . $tid . ' con la 4ª incidencia (abandono); la web no lo cuenta';
+        last;
+      }
+    }
+  }
   if (@outT && !grep { $_->{ps} } @outT) {
     push @warn, 'Ningún tramo marcado como POWER STAGE';
   }

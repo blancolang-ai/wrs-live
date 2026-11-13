@@ -147,7 +147,7 @@ function renderTramo() {
       <div class="gral">${ord(gp)}${ch}</div></div>`;
   }).join('');
   h += pend.map((r, i) => `<div class="row ${catCls(r.p.cat)}" data-d="${r.p.dorsal}"><div class="pos pend">–</div><div class="dor" style="opacity:.55">${r.p.dorsal}</div><div class="nm" style="color:#8a93a0">${esc(r.p.nombre)}</div><div class="slot" style="text-align:right;${i === 0 && isCur && done.length ? 'color:var(--accent);font-weight:700;font-style:normal' : ''}">${i === 0 && isCur && done.length ? '● en tramo' : 'por salir'}</div><div></div><div></div></div>`).join('');
-  h += abs.map(r => `<div class="row ab ${catCls(r.p.cat)}" data-d="${r.p.dorsal}"><div class="pos">–</div><div class="dor">${r.p.dorsal}</div><div class="nm">${esc(r.p.nombre)}</div><div class="tm" style="color:#9aa2ad">Ab.</div><div></div><div class="gral" style="color:#9aa2ad;font-size:11px">${T()[M.ABI[r.p.dorsal]].id}</div></div>`).join('');
+  h += abs.map(r => `<div class="row ab ${catCls(r.p.cat)}" data-d="${r.p.dorsal}"><div class="pos">–</div><div class="dor">${r.p.dorsal}</div><div class="nm">${esc(r.p.nombre)}</div><div class="tm" style="color:#9aa2ad">Ab.${(r.v && M.ABI[r.p.dorsal] === ti) ? tags(r) : ''}</div><div></div><div class="gral" style="color:#9aa2ad;font-size:11px">${T()[M.ABI[r.p.dorsal]].id}</div></div>`).join('');
   $('tramo').innerHTML = h;
 }
 
@@ -206,7 +206,7 @@ function renderPil() {
     const cells = s.tramos.map(id => {
       const ti = M.tIdx[id], x = L.tramoResults(M, ti).res.find(z => z.p.dorsal === S.pil);
       if (!x.v) return `<div class="cell na"><div class="ci"><span>${esc(id)}</span></div><div class="cv">—</div><div class="cp">&nbsp;</div></div>`;
-      if (x.tm === 999) return `<div class="cell"><div class="ci"><span>${esc(id)}</span></div><div class="cv" style="color:#9aa2ad">Ab.</div><div class="cp">&nbsp;</div></div>`;
+      if (x.tm === 999) return `<div class="cell"><div class="ci"><span>${esc(id)}</span><span>${tags(x)}</span></div><div class="cv" style="color:#9aa2ad">Ab.</div><div class="cp">&nbsp;</div></div>`;
       sum += x.tm; any = true;
       return `<div class="cell ${x.scratch ? (p.cat === 'Rally1' ? 's1' : 's2') : ''}"><div class="ci"><span>${esc(id)}</span><span>${tags(x)}</span></div><div class="cv num ${x.c || x.t ? 'inc' : ''}">${fmt(x.tm)}</div><div class="cp">${ord(x.pos)} · ${esc(catShort(p.cat))} ${ord(x.cpos)}</div></div>`;
     }).join('');

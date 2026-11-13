@@ -136,3 +136,69 @@ test('scratch en directo: se marca el mejor de la categoría sin esperar a que t
   assert.ok(r1.rows.some(r => r.p.dorsal === 2 && r.n === 1));
   assert.ok(!r1.rows.some(r => r.p.dorsal === 1));
 });
+
+test('4 incidencias acumuladas: abandono en ese tramo, se conservan los tiempos anteriores y se ignoran el de ese tramo y los posteriores', () => {
+  const d = synth({ upTo: 6 });
+  const p = d.pilotos.find(x => x.dorsal === 1);
+  // 1+1+1 en TC1–TC3; en TC4 llega a 4 (1 C) con tiempo, y aún escribe TC5
+  p.t.TC1 = [110, 1, 0];
+  p.t.TC2 = [111, 1, 0];
+  p.t.TC3 = [112, 1, 0];
+  p.t.TC4 = [113, 1, 0];
+  p.t.TC5 = [114, 0, 0];
+  p.t.TC6 = [115, 0, 0];
+  const m = L.model(d);
+  assert.equal(m.ABI[1], 3);
+  assert.deepEqual(L.raw(m, p, 3), [999, 1, 0]);
+  assert.equal(L.raw(m, p, 4), null);
+  assert.equal(L.vis(m, 4, 1), false);
+  const st = L.standings(m);
+  const r = st.find(x => x.p.dorsal === 1);
+  assert.equal(r.ab, 3);
+  assert.equal(r.n, 3);
+  assert.equal(r.tot, 110 + 111 + 112);
+  assert.equal(r.last, 2);
+  assert.equal(r.incC, 4); assert.equal(r.incT, 0);
+  assert.equal(st.at(-1).p.dorsal, 1);
+  assert.equal(L.withDiffs(st).find(x => x.p.dorsal === 1).dp, null);
+  assert.deepEqual(L.incAcc(m, p), { c: 4, t: 0 });
+  assert.deepEqual(L.incAcc(m, p, 2), { c: 3, t: 0 });
+  const tr = L.tramoResults(m, 3).res.find(x => x.p.dorsal === 1);
+  assert.equal(tr.tm, 999); assert.equal(tr.c, 1); assert.equal(tr.scratch, false);
+  assert.ok(!L.tramoResults(m, 3).done.some(x => x.p.dorsal === 1));
+  assert.equal(L.tramoComplete(m, 4), true);
+  const so = L.startOrder(m, 1);
+  assert.deepEqual(so.ab.map(x => x.p.dorsal), [1]);
+  assert.ok(!so.groups.flatMap(g => g.list).some(x => x.p.dorsal === 1));
+  assert.ok(L.expectedOrder(m, 3).includes(1));
+  assert.ok(!L.expectedOrder(m, 4).includes(1));
+});
+
+test('4 incidencias en un salto (C+T) y mezcla con abandono 999: no se abandona con 3', () => {
+  const d = synth({ upTo: 4 });
+  const p2 = d.pilotos.find(x => x.dorsal === 2);
+  p2.t.TC1 = [101, 2, 1]; // 3, sigue en carrera
+  p2.t.TC2 = [102, 0, 2]; // llega a 5 en TC2
+  const m = L.model(d);
+  assert.equal(m.ABI[2], 1);
+  const r = L.standings(m).find(x => x.p.dorsal === 2);
+  assert.equal(r.ab, 1); assert.equal(r.n, 1); assert.equal(r.tot, 101);
+  assert.equal(r.incC, 2); assert.equal(r.incT, 3);
+  const p3 = d.pilotos.find(x => x.dorsal === 3);
+  // 3 incidencias y luego un 999 clásico
+  p3.t.TC1 = [103, 1, 1];
+  p3.t.TC2 = [104, 1, 0];
+  p3.t.TC3 = [999, 0, 0];
+  const m2 = L.model(d);
+  assert.equal(m2.ABI[3], 2);
+  assert.equal(L.standings(m2).find(x => x.p.dorsal === 3).ab, 2);
+  assert.deepEqual(L.incAcc(m2, m2.byD[3]), { c: 2, t: 1 });
+  // 4 C en el primer tramo: abandono inmediato, sin tiempo
+  const p12 = d.pilotos.find(x => x.dorsal === 12);
+  p12.t.TC1 = [50, 3, 1];
+  const m3 = L.model(d);
+  const r12 = L.standings(m3).find(x => x.p.dorsal === 12);
+  assert.equal(r12.ab, 0); assert.equal(r12.n, 0); assert.equal(r12.incC, 3); assert.equal(r12.incT, 1);
+  const tr0 = L.tramoResults(m3, 0).res.find(x => x.p.dorsal === 12);
+  assert.equal(tr0.tm, 999); assert.equal(tr0.c, 3); assert.equal(tr0.t, 1); assert.equal(tr0.scratch, false);
+});

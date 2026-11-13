@@ -220,3 +220,17 @@ test('Perl = JS: C/T con cabecera «C»/«T», «Costado»/«Techo» o vacía', 
   const { js } = compare(miniCT({ cHdr: 'C', tHdr: 'T', cVal: 'x', tVal: 0 }));
   assert.deepEqual(js.data.pilotos[0].t.TC1, [101, 1, 0]);
 });
+test('Perl = JS: aviso si hay tiempo en el tramo de la 4ª incidencia', () => {
+  const rows = sheet({
+    tcs: [['TC1 Uno 10 km', 'TC2 Dos 5 km', 'TC3 Tres 8 km', 'TC4 Cuatro 6 km']],
+    days: [1],
+    cell: (si, ti, d) => (d === 1 ? 101 + ti : undefined)
+  });
+  rows[6][8] = 1; rows[6][11] = 1; rows[6][14] = 1; rows[6][17] = 1; rows[6][6] = 4;
+  const { js, pl } = compare(rows);
+  assert.deepEqual(js.data.pilotos.find(p => p.dorsal === 1).t.TC4, [104, 1, 0]);
+  const w = js.warnings.filter(x => /4ª incidencia/.test(x));
+  assert.equal(w.length, 1);
+  assert.match(w[0], /Dorsal 1: tiempo en TC4 con la 4ª incidencia \(abandono\); la web no lo cuenta/);
+  assert.deepEqual(pl.warnings, js.warnings);
+});

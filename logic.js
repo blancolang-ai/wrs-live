@@ -10,23 +10,39 @@
     const CATS = data.cats && data.cats.length ? data.cats : [R1];
     const byD = Object.fromEntries(P.map(p => [p.dorsal, p]));
     const tIdx = Object.fromEntries(T.map((t, i) => [t.id, i]));
-    const ABI = Object.fromEntries(P.map(p => { const i = T.findIndex(t => p.t[t.id] && p.t[t.id][0] === 999); return [p.dorsal, i < 0 ? null : i]; }));
+    const ABI = Object.fromEntries(P.map(p => [p.dorsal, abandonIndex(T, p)]));
     const DL = data.dayLabels && data.dayLabels.length === ndays ? data.dayLabels : DAYS.map((d, i) => ({ short: 'D' + (i + 1), long: 'Día ' + (i + 1) }));
     return { data, T, P, SEC, DAYS, CATS, byD, tIdx, ABI, DL, cache: new Map() };
   }
-  const raw = (m, p, ti) => p.t[m.T[ti].id] || null;           // [tiempo, C, T]
-  const vis = (m, ti, d) => !!m.byD[d].t[m.T[ti].id];
+  /* Primer tramo (en orden) con 999 o en el que C+T acumulados llegan a 4. */
+  function abandonIndex(T, p) {
+    let acc = 0;
+    for (let ti = 0; ti < T.length; ti++) {
+      const v = p.t[T[ti].id]; if (!v) continue;
+      acc += incCount(v[1]) + incCount(v[2]);
+      if (v[0] === 999 || acc >= 4) return ti;
+    }
+    return null;
+  }
+  function raw(m, p, ti) {
+    const v = p.t[m.T[ti].id] || null;
+    if (!v) return null;
+    const ab = m.ABI[p.dorsal];
+    if (ab != null && ti > ab) return null;
+    if (ab != null && ti === ab) return [999, incCount(v[1]), incCount(v[2])];
+    return v;
+  }
+  const vis = (m, ti, d) => !!raw(m, m.byD[d], ti);
   const dayOfSec = (m, s) => m.SEC[s].day;
   function incCount(n) { n = Math.round(Number(n)); return isFinite(n) && n > 0 ? n : 0; }
   function incBadges(letter, n) { const k = incCount(n), a = []; for (let i = 0; i < k; i++) a.push(letter); return a; }
   /* C y T acumulados hasta el tramo «limit» (misma regla que el total de tiempos). */
   function incAcc(m, p, limit = m.T.length - 1) {
-    let c = 0, t = 0, ab = null;
+    let c = 0, t = 0;
     for (let ti = 0; ti <= limit; ti++) {
       const v = raw(m, p, ti); if (!v) continue;
-      if (v[0] === 999) { if (ab == null) ab = ti; continue; }
-      if (ab != null) continue;
       c += incCount(v[1]); t += incCount(v[2]);
+      if (v[0] === 999) break;
     }
     return { c, t };
   }
@@ -80,10 +96,10 @@
       const secTouched = new Set();
       for (let ti = 0; ti <= limit; ti++) {
         const v = raw(m, p, ti); if (!v) continue;
+        incC += incCount(v[1]); incT += incCount(v[2]);
         if (v[0] === 999) { if (ab == null) ab = ti; continue; }
         if (ab != null) continue;
         n++; tot += v[0]; last = ti; secTouched.add(m.T[ti].sec);
-        incC += incCount(v[1]); incT += incCount(v[2]);
       }
       secTouched.forEach(s => pen += p.pen[s] || 0);
       tot = Math.round((tot + pen) * 1000) / 1000;
@@ -178,6 +194,6 @@
   const catShort = c => c === R1 ? 'R1' : c === 'Rally2' ? 'R2' : String(c).slice(0, 3);
   const catCls = c => c === R1 ? 'R1' : 'R2';
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
-  const api = { model, vis, raw, tramoComplete, curTramo, hasTimes, isFinal, isLive, standings, withDiffs, tramoResults, startOrder, expectedOrder, changes, incCount, incBadges, incAcc, incLabel, scratchRanking, decs, fmt, fmmss, fdif, fpen, ord, catShort, catCls, esc, dayOfSec };
+  const api = { model, vis, raw, abandonIndex, tramoComplete, curTramo, hasTimes, isFinal, isLive, standings, withDiffs, tramoResults, startOrder, expectedOrder, changes, incCount, incBadges, incAcc, incLabel, scratchRanking, decs, fmt, fmmss, fdif, fpen, ord, catShort, catCls, esc, dayOfSec };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.RD = api;
 })(typeof window !== 'undefined' ? window : globalThis);

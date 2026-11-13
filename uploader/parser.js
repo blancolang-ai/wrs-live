@@ -328,6 +328,16 @@ var RallyParser = (function () {
       });
     });
     var pilotos = order.map(function (k) { return pil[k]; });
+    pilotos.forEach(function (p) {
+      var acc = 0;
+      for (var ti = 0; ti < outT.length; ti++) {
+        var tid = outT[ti].id, tv = p.t[tid];
+        if (!tv) continue;
+        acc += (tv[1] || 0) + (tv[2] || 0);
+        if (tv[0] === 999) break;
+        if (acc >= 4) { warn.push('Dorsal ' + p.dorsal + ': tiempo en ' + tid + ' con la 4ª incidencia (abandono); la web no lo cuenta'); break; }
+      }
+    });
     if (outT.length && !outT.some(function (t) { return t.ps; })) warn.push('Ningún tramo marcado como POWER STAGE');
     var cats = []; pilotos.forEach(function (p) { if (p.cat && cats.indexOf(p.cat) < 0) cats.push(p.cat); }); cats.sort();
     if (!cats.length) { warn.push('Sin columna Categoría (formato antiguo): se trata como una sola categoría'); pilotos.forEach(function (p) { p.cat = 'Rally1'; }); cats = ['Rally1']; }
