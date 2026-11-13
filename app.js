@@ -216,7 +216,7 @@ $('aft').onchange = e => { const v = e.target.value, ct = L.curTramo(M); S.after
 $('chips').onclick = e => { const b = e.target.closest('.chip'); if (!b) return; S.ti = +b.dataset.ti; S.tiManual = S.ti !== L.curTramo(M); renderTramo(); };
 $('tprev').onclick = () => { if (S.ti > 0) { S.ti--; S.tiManual = S.ti !== L.curTramo(M); renderTramo(); } };
 $('tnext').onclick = () => { if (S.ti < T().length - 1) { S.ti++; S.tiManual = S.ti !== L.curTramo(M); renderTramo(); } };
-$('daysel').onclick = e => { const b = e.target.closest('button'); if (!b) return; S.day = +b.dataset.day; renderSalida(); };
+$('daysel').onclick = e => { const b = e.target.closest('button'); if (!b) return; S.day = +b.dataset.day; S.dayManual = true; renderSalida(); };
 ['clas', 'tramo', 'salida'].forEach(id => $(id).addEventListener('click', e => { const r = e.target.closest('.row[data-d]'); if (r) openPil(+r.dataset.d); }));
 $('scrim').onclick = closePil;
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closePil(); });
@@ -238,7 +238,6 @@ function applyData(j) {
   const firstLoad = !M, sameRally = DATA && DATA.rally === j.data.rally && DATA.tramos.length === j.data.tramos.length;
   const ch = sameRally ? L.changes(DATA, j.data) : [];
   if (!sameRally) { S.ti = null; S.tiManual = false; S.after = null; lastNew = null; if (!M || !j.data.cats.includes(S.cat)) S.cat = 'all'; }
-  const prevCur = M ? L.curTramo(M) : null;
   DATA = j.data; VERSION = j.version; AT = j.at; M = L.model(DATA);
   const nw = ch.filter(c => c.ti != null);
   if (nw.length) lastNew = nw.reduce((a, b) => (b.ti > a.ti ? b : a));
@@ -246,8 +245,9 @@ function applyData(j) {
   const cur = L.curTramo(M);
   if (!S.tiManual || firstLoad) S.ti = cur;
   else if (nw.some(c => c.ti !== S.ti)) { const tgt = lastNew.ti; toast(`Nuevo tiempo en ${M.T[tgt].id} · ver`, () => { S.ti = tgt; S.tiManual = false; S.view = 'tramo'; renderAll(); }); }
-  if (prevCur != null && S.day < M.DAYS.length - 1 && L.dayOfSec(M, M.T[cur].sec) > S.day) S.day = Math.min(M.DAYS.length - 1, L.dayOfSec(M, M.T[cur].sec));
-  if (firstLoad) S.day = Math.max(1, Math.min(M.DAYS.length - 1, L.dayOfSec(M, M.T[cur].sec) + (L.tramoComplete(M, cur) ? 1 : 0)));
+  // día del orden de salida: el próximo que va a empezar (salvo que el aficionado haya elegido otro)
+  if (!sameRally) S.dayManual = false;
+  if (!S.dayManual) { const dc = L.dayOfSec(M, M.T[cur].sec), lastOfDay = M.DAYS[dc].secs.at(-1) === M.T[cur].sec && M.T.filter(t => t.sec === M.T[cur].sec).at(-1) === M.T[cur]; S.day = Math.max(1, Math.min(M.DAYS.length - 1, dc + (lastOfDay && L.tramoComplete(M, cur) ? 1 : 0))); }
   renderAll();
   if (flashD.size) setTimeout(() => { flashD = new Set(); document.querySelectorAll('.row.flash').forEach(r => r.classList.remove('flash')); }, 2600);
 }
