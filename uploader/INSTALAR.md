@@ -14,11 +14,13 @@ categorías, tramos, tiempos, C/T, abandonos (999) y penalizaciones. Nada más d
    macOS lo pide solo la primera vez porque el programa no viene de la App Store.
    - Si macOS dice que «no se puede abrir»: ve a **Ajustes del Sistema → Privacidad y seguridad**, baja hasta el aviso de
      «Rally Directo.command» y pulsa **Abrir igualmente**.
-3. Elige el Excel del rally (el que tiene una sola pestaña). El programa lo recuerda para las siguientes veces.
+3. Elige el Excel del rally. Puede tener el nombre y la ubicación que quieras: el programa lo recuerda
+   para las siguientes veces. Si más adelante lo mueves o lo renombras, te lo volverá a preguntar.
 
 ## Usarlo en cada rally
 
-1. Abre el Excel del rally.
+1. Abre el Excel del rally. El archivo puede tener todas las pestañas que sean: para el directo se usa la que va
+   **justo antes de «Plantilla»**. Cuando empieces un rally nuevo, añade esa pestaña inmediatamente delante de «Plantilla».
 2. Haz **doble clic en «Rally Directo.command»**. Se abre una ventana de Terminal; confirma que es el Excel correcto
    (o pulsa «Elegir otro»).
 3. Apunta los tiempos y **guarda con ⌘S** a menudo. Al guardar verás en la ventana algo como:
@@ -34,5 +36,7 @@ categorías, tramos, tiempos, C/T, abandonos (999) y penalizaciones. Nada más d
 - **Solo se sube lo guardado.** El autoguardado de Excel no funciona con archivos locales: guarda con ⌘S.
 - No cierres la ventana de Terminal durante el rally.
 - Los archivos `~$…` que crea Excel se ignoran.
+- En la ventana verás qué pestaña se está usando (por ejemplo, «📄 Usando la pestaña «Finlandia»»). Si añades un rally nuevo
+  delante de «Plantilla», al guardar anunciará la pestaña nueva.
 - Si la ventana muestra avisos «⚠» (por ejemplo, un TC repetido o el Power Stage sin marcar), revisa la hoja y vuelve a guardar.
 - Si el servidor rechaza la clave («⛔ … rechaza la clave»), pide un `clave.txt` nuevo a Desarrollos.

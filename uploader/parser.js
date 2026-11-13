@@ -1,7 +1,8 @@
 /* Rally Directo · lector de la hoja del rally (.xlsx) sin dependencias.
  * Funciona igual en el Mac (JavaScript for Automation, «osascript -l JavaScript») y en Node (pruebas).
  * Entrada: getXml(rutaDentroDelZip) -> string | null. Salida: SOLO los datos públicos del rally + avisos.
- * Lee la PRIMERA hoja del libro (el Excel del directo tiene una sola pestaña). */
+ * Si no se indica una hoja, usa la pestaña inmediatamente anterior a «Plantilla»
+ * (el Excel puede tener todas las pestañas que sean; un rally nuevo se añade justo antes de «Plantilla»). */
 var RallyParser = (function () {
   'use strict';
   function decode(s) {
@@ -16,10 +17,35 @@ var RallyParser = (function () {
   function colIndex(ref) { var c = /^[A-Z]+/.exec(ref)[0], n = 0; for (var i = 0; i < c.length; i++) n = n * 26 + (c.charCodeAt(i) - 64); return n - 1; }
   var ERR = { v: '#ERR' };
 
+  function foldName(s) {
+    var t = String(s == null ? '' : s).replace(/\s+/g, ' ').trim().toLowerCase();
+    if (typeof t.normalize === 'function') t = t.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    else t = t.replace(/[áàäâ]/g, 'a').replace(/[éèëê]/g, 'e').replace(/[íìïî]/g, 'i').replace(/[óòöô]/g, 'o').replace(/[úùüû]/g, 'u').replace(/ñ/g, 'n');
+    return t;
+  }
+  function isPlantilla(name) { return foldName(name) === 'plantilla'; }
+  function listSheets(wb) {
+    return (wb.match(/<sheet\s[^>]*>/g) || []).map(function (x) { return attr(x, 'name') || ''; });
+  }
+  /* Elige la pestaña del directo: la anterior a «Plantilla». */
+  function pickLiveSheet(names) {
+    if (!names.length) throw new Error('El libro no tiene hojas');
+    if (names.length === 1) return { name: names[0] };
+    var i, pi = -1;
+    for (i = 0; i < names.length; i++) if (isPlantilla(names[i])) { pi = i; break; }
+    if (pi === 0) throw new Error('La pestaña «Plantilla» es la primera del libro; el programa usa la pestaña anterior a «Plantilla». Pon el rally justo antes de «Plantilla».');
+    if (pi < 0) return { name: names[names.length - 1], warning: 'El libro no tiene pestaña «Plantilla»; se usa la última («' + names[names.length - 1] + '»)' };
+    return { name: names[pi - 1] };
+  }
+
   function readSheet(getXml, wanted) {
     var wb = getXml('xl/workbook.xml'); if (!wb) throw new Error('No es un archivo .xlsx válido (falta workbook.xml)');
-    var all = wb.match(/<sheet\s[^>]*>/g) || [], sh = null;
-    all.forEach(function (x) { if (!sh && (!wanted || attr(x, 'name') === wanted)) sh = [x]; });
+    var all = wb.match(/<sheet\s[^>]*>/g) || [], sh = null, pickWarn = null;
+    if (!wanted) {
+      var pick = pickLiveSheet(listSheets(wb));
+      wanted = pick.name; pickWarn = pick.warning || null;
+    }
+    all.forEach(function (x) { if (!sh && attr(x, 'name') === wanted) sh = [x]; });
     if (!sh) throw new Error(wanted ? 'No existe la hoja «' + wanted + '»' : 'El libro no tiene hojas');
     var sheetName = attr(sh[0], 'name'), rid = attr(sh[0], 'r:id');
     var nSheets = (wb.match(/<sheet\s/g) || []).length;
@@ -51,7 +77,7 @@ var RallyParser = (function () {
       rows[rn] = cells;
     }
     for (var i = 0; i < rows.length; i++) if (!rows[i]) rows[i] = [];
-    return { name: sheetName, rows: rows, nSheets: nSheets };
+    return { name: sheetName, rows: rows, nSheets: nSheets, warning: pickWarn };
   }
 
   function norm(s) { return String(s).replace(/\s+/g, ' ').trim(); }
@@ -77,7 +103,7 @@ var RallyParser = (function () {
   function parse(getXml, opts) {
     opts = opts || {};
     var sheet = readSheet(getXml, opts.sheet), rows = sheet.rows, warn = [];
-    if (sheet.nSheets > 1 && !opts.sheet) warn.push('El libro tiene ' + sheet.nSheets + ' pestañas; se usa solo la primera («' + sheet.name + '»)');
+    if (sheet.warning) warn.push(sheet.warning);
     var venue = null, date = null;
     (rows[1] || []).forEach(function (v) {
       if (isNum(v) && v > 20000 && v < 80000 && !date) { var d = new Date(Date.UTC(1899, 11, 30) + Math.round(v) * 86400000); date = { y: d.getUTCFullYear(), m: d.getUTCMonth(), d: d.getUTCDate(), wd: (d.getUTCDay() + 6) % 7 }; }
@@ -203,6 +229,6 @@ var RallyParser = (function () {
     };
     return { data: data, warnings: warn, sheet: sheet.name, times: times };
   }
-  return { parse: parse, readSheet: readSheet, parseTramo: parseTramo };
+  return { parse: parse, readSheet: readSheet, parseTramo: parseTramo, pickLiveSheet: pickLiveSheet, foldName: foldName };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = RallyParser;

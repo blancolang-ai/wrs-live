@@ -7,7 +7,7 @@ function fakeIo() {
     now: () => io.t, log: m => io.logs.push(m), hash: s => s,
     stat: () => io.file && { m: io.file.m, z: io.file.z }, open: () => () => { if (io.file.broken) throw new Error('unzip: End-of-central-directory'); return io.file.content; },
     post: j => { if (io.net !== 'ok') throw new Error('curl: (6) Could not resolve host'); io.posts.push(j); return { status: io.status, body: '' }; } };
-  io.save = (times, extra = {}) => { const m = (io.file?.m || 0) + 1; io.file = { m, z: 100 + m, content: { data: { rally: 'Rally X', tramos: [{ id: 'TC1' }], pilotos: [{ t: times ? { TC1: [1, 0, 0] } : {} }] }, warnings: extra.warnings || [], times: times ? 1 : 0 }, broken: extra.broken }; };
+  io.save = (times, extra = {}) => { const m = (io.file?.m || 0) + 1; io.file = { m, z: 100 + m, content: { data: { rally: 'Rally X', tramos: [{ id: 'TC1' }], pilotos: [{ t: times ? { TC1: [1, 0, 0] } : {} }] }, warnings: extra.warnings || [], times: times ? 1 : 0, sheet: extra.sheet }, broken: extra.broken }; };
   io.run = (secs) => { const st = io.st; const end = io.t + secs * 1000; while (io.t < end) { const w = C.step(st, io, parser); io.t += w * 1000; } };
   io.st = C.newState('/Users/x/Rally.xlsx');
   return io;
@@ -36,4 +36,14 @@ test('muestra los avisos del lector una sola vez; ignora temporales de Excel', (
 });
 test('si el Excel desaparece, avisa sin romperse', () => {
   const io = fakeIo(); io.run(4); assert.ok(io.logs.some(l => /No encuentro el Excel/.test(l)));
+});
+
+test('anuncia la pestaña usada una vez y otra si cambia', () => {
+  const io = fakeIo(); io.save(true, { sheet: 'Finlandia' }); io.run(4);
+  assert.equal(io.logs.filter(l => /📄 Usando la pestaña «Finlandia»/.test(l)).length, 1);
+  io.file.m++; io.run(4);
+  assert.equal(io.logs.filter(l => /📄 Usando la pestaña «Finlandia»/.test(l)).length, 1);
+  io.save(true, { sheet: 'Kenya' }); io.run(4);
+  assert.equal(io.logs.filter(l => /📄 Usando la pestaña «Kenya»/.test(l)).length, 1);
+  assert.equal(io.logs.filter(l => /📄 Usando la pestaña «Finlandia»/.test(l)).length, 1);
 });

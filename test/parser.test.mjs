@@ -3,22 +3,27 @@ import { test } from 'node:test'; import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 const P = createRequire(import.meta.url)('../uploader/parser.js');
 const colL = i => { let s = ''; i++; while (i) { const r = (i - 1) % 26; s = String.fromCharCode(65 + r) + s; i = Math.floor((i - 1) / 26); } return s; };
-function book(rows, { sheets = ['Rally Prueba'] } = {}) {
-  const ss = [], sIdx = v => { let i = ss.indexOf(v); if (i < 0) { ss.push(v); i = ss.length - 1; } return i; };
-  const x = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
-  const body = rows.map((r, ri) => `<row r="${ri + 1}">` + r.map((v, ci) => {
+function rowsXml(rows, sIdx, x) {
+  return rows.map((r, ri) => `<row r="${ri + 1}">` + r.map((v, ci) => {
     if (v == null) return ''; const ref = colL(ci) + (ri + 1);
     if (typeof v === 'number') return `<c r="${ref}"><v>${v}</v></c>`;
     if (v && v.err) return `<c r="${ref}" t="e"><f>1/0</f><v>${v.err}</v></c>`;
     if (v && v.f) return `<c r="${ref}" t="str"><f>x</f><v>${x(v.f)}</v></c>`;
     return `<c r="${ref}" t="s"><v>${sIdx(v)}</v></c>`;
   }).join('') + '</row>').join('');
+}
+function book(rows, { sheets = ['Rally Prueba'], bodies } = {}) {
+  const ss = [], sIdx = v => { let i = ss.indexOf(v); if (i < 0) { ss.push(v); i = ss.length - 1; } return i; };
+  const x = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
   const files = {
     'xl/workbook.xml': `<workbook><sheets>${sheets.map((n, i) => `<sheet name="${n}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('')}</sheets></workbook>`,
-    'xl/_rels/workbook.xml.rels': `<Relationships>${sheets.map((n, i) => `<Relationship Id="rId${i + 1}" Type="w" Target="worksheets/sheet${i + 1}.xml"/>`).join('')}</Relationships>`,
-    'xl/worksheets/sheet1.xml': `<worksheet><sheetData>${body}</sheetData></worksheet>`,
-    'xl/sharedStrings.xml': `<sst>${ss.map(s => `<si><t xml:space="preserve">${x(s)}</t></si>`).join('')}</sst>`
+    'xl/_rels/workbook.xml.rels': `<Relationships>${sheets.map((n, i) => `<Relationship Id="rId${i + 1}" Type="w" Target="worksheets/sheet${i + 1}.xml"/>`).join('')}</Relationships>`
   };
+  sheets.forEach((n, i) => {
+    const r = (bodies && bodies[n] !== undefined) ? bodies[n] : (i === 0 ? rows : []);
+    files[`xl/worksheets/sheet${i + 1}.xml`] = `<worksheet><sheetData>${rowsXml(r, sIdx, x)}</sheetData></worksheet>`;
+  });
+  files['xl/sharedStrings.xml'] = `<sst>${ss.map(s => `<si><t xml:space="preserve">${x(s)}</t></si>`).join('')}</sst>`;
   return n => files[n] || null;
 }
 const H = (tcs, withCat = true) => ['Pos.', 'Dorsal', 'Piloto', 'Coche', ...(withCat ? ['Categoría'] : []), 'Pesos', 'Incidencias acumuladas', ...tcs.flatMap(t => [t, 'C.', 'T.']), 'Suma', 'Total Rally Leg 1.1', 'Penalizaciones'];
@@ -72,9 +77,61 @@ test('formato antiguo sin Categoría: una sola categoría con aviso', () => {
   const { data, warnings } = P.parse(book(sheet({ withCat: false })));
   assert.deepEqual(data.cats, ['Rally1']); assert.ok(warnings.some(w => /formato antiguo/.test(w)));
 });
-test('varias pestañas: usa la primera y avisa; libro sin secciones: error claro', () => {
-  const { warnings } = P.parse(book(sheet(), { sheets: ['Rally Prueba', 'Otra'] }));
-  assert.ok(warnings.some(w => /2 pestañas/.test(w)));
+test('libro sin secciones: error claro; archivo inválido: error claro', () => {
   assert.throws(() => P.parse(book([['hola']])), /ninguna sección/);
   assert.throws(() => P.parse(() => null), /xlsx válido/);
+});
+test('varias pestañas: usa la anterior a «Plantilla» (también con mayúsculas, espacios o acento)', () => {
+  const rows = sheet();
+  const r = P.parse(book(rows, {
+    sheets: ['Viejo', 'Rally Prueba', 'Plantilla'],
+    bodies: { Viejo: [['nada']], 'Rally Prueba': rows, Plantilla: [['Plantilla']] }
+  }));
+  assert.equal(r.sheet, 'Rally Prueba');
+  assert.equal(r.data.rally, 'Rally Prueba');
+  assert.ok(!r.warnings.some(w => /primera|Plantilla/.test(w)));
+
+  const r2 = P.parse(book(rows, {
+    sheets: ['Rally Prueba', '  plÁntilla  '],
+    bodies: { 'Rally Prueba': rows, '  plÁntilla  ': [['x']] }
+  }));
+  assert.equal(r2.sheet, 'Rally Prueba');
+
+  const r3 = P.parse(book(rows, {
+    sheets: ['Rally Prueba', 'PLANTILLA'],
+    bodies: { 'Rally Prueba': rows, PLANTILLA: [['x']] }
+  }));
+  assert.equal(r3.sheet, 'Rally Prueba');
+});
+test('una sola pestaña: se usa esa, aunque se llame «Plantilla»', () => {
+  const r = P.parse(book(sheet()));
+  assert.equal(r.sheet, 'Rally Prueba');
+  assert.ok(!r.warnings.some(w => /Plantilla/.test(w)));
+  const r2 = P.parse(book(sheet(), { sheets: ['Plantilla'] }));
+  assert.equal(r2.sheet, 'Plantilla');
+  assert.equal(r2.data.rally, 'Rally Prueba');
+});
+test('sin pestaña «Plantilla»: usa la última y avisa', () => {
+  const rows = sheet();
+  const r = P.parse(book(rows, {
+    sheets: ['Primera', 'Última'],
+    bodies: { Primera: [['nada']], 'Última': rows }
+  }));
+  assert.equal(r.sheet, 'Última');
+  assert.ok(r.warnings.some(w => /no tiene pestaña «Plantilla»/.test(w) && /Última/.test(w)));
+});
+test('«Plantilla» es la primera (con más pestañas): error claro en español', () => {
+  assert.throws(
+    () => P.parse(book(sheet(), { sheets: ['Plantilla', 'Rally Prueba'] })),
+    /La pestaña «Plantilla» es la primera/
+  );
+});
+test('opts.sheet sigue eligiendo una pestaña concreta', () => {
+  const rows = sheet();
+  const r = P.parse(book(rows, {
+    sheets: ['Viejo', 'Rally Prueba', 'Plantilla'],
+    bodies: { Viejo: rows, 'Rally Prueba': [['nada']], Plantilla: [['x']] }
+  }), { sheet: 'Viejo' });
+  assert.equal(r.sheet, 'Viejo');
+  assert.equal(r.data.rally, 'Rally Prueba');
 });

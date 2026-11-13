@@ -9,7 +9,7 @@ var UploaderCore = (function () {
     d.tramos.forEach(function (t) { if (d.pilotos.some(function (p) { return p.t[t.id]; })) last = t.id; });
     return d.rally + ' · ' + (last ? 'hasta ' + last : 'sin tiempos') + ' · ' + r.times + ' tiempos · ' + d.pilotos.length + ' pilotos';
   }
-  function newState(path) { return { path: path, seen: null, stableAt: null, sentHash: null, pending: null, warnKey: null, nextTry: 0, lastErr: null, uploads: 0 }; }
+  function newState(path) { return { path: path, seen: null, stableAt: null, sentHash: null, pending: null, warnKey: null, nextTry: 0, lastErr: null, uploads: 0, sheet: null }; }
   /* una vuelta del bucle; devuelve los segundos a esperar */
   function step(st, io, parser) {
     var now = io.now();
@@ -21,6 +21,7 @@ var UploaderCore = (function () {
       st.stableAt = null;
       try {
         var r = parser.parse(io.open(st.path));
+        if (r.sheet && r.sheet !== st.sheet) { io.log('📄 Usando la pestaña «' + r.sheet + '»'); st.sheet = r.sheet; }
         var wk = r.warnings.join('\n');
         if (wk !== st.warnKey) { st.warnKey = wk; r.warnings.forEach(function (w) { io.log('  ⚠ ' + w); }); }
         var json = JSON.stringify(r.data), h = io.hash(json);
