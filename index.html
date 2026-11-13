@@ -10,16 +10,16 @@
 <meta name="description" content="Tiempos en directo de los rallies de slot WRSlot Cantabria">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
-<link rel="manifest" href="manifest.webmanifest?v=1.2.4">
+<link rel="manifest" href="manifest.webmanifest?v=1.2.5">
 <style>
-@font-face{font-family:'Barlow';font-weight:400;src:url('fonts/barlow-400.woff2?v=1.2.4') format('woff2')}
-@font-face{font-family:'Barlow';font-weight:500;src:url('fonts/barlow-500.woff2?v=1.2.4') format('woff2')}
-@font-face{font-family:'Barlow';font-weight:600;src:url('fonts/barlow-600.woff2?v=1.2.4') format('woff2')}
-@font-face{font-family:'Barlow';font-weight:700;src:url('fonts/barlow-700.woff2?v=1.2.4') format('woff2')}
-@font-face{font-family:'BC';font-weight:500;src:url('fonts/barlow-cond-500.woff2?v=1.2.4') format('woff2')}
-@font-face{font-family:'BC';font-weight:600;src:url('fonts/barlow-cond-600.woff2?v=1.2.4') format('woff2')}
-@font-face{font-family:'BC';font-weight:700;src:url('fonts/barlow-cond-700.woff2?v=1.2.4') format('woff2')}
-@font-face{font-family:'BC';font-weight:800;src:url('fonts/barlow-cond-800.woff2?v=1.2.4') format('woff2')}
+@font-face{font-family:'Barlow';font-weight:400;src:url('fonts/barlow-400.woff2?v=1.2.5') format('woff2')}
+@font-face{font-family:'Barlow';font-weight:500;src:url('fonts/barlow-500.woff2?v=1.2.5') format('woff2')}
+@font-face{font-family:'Barlow';font-weight:600;src:url('fonts/barlow-600.woff2?v=1.2.5') format('woff2')}
+@font-face{font-family:'Barlow';font-weight:700;src:url('fonts/barlow-700.woff2?v=1.2.5') format('woff2')}
+@font-face{font-family:'BC';font-weight:500;src:url('fonts/barlow-cond-500.woff2?v=1.2.5') format('woff2')}
+@font-face{font-family:'BC';font-weight:600;src:url('fonts/barlow-cond-600.woff2?v=1.2.5') format('woff2')}
+@font-face{font-family:'BC';font-weight:700;src:url('fonts/barlow-cond-700.woff2?v=1.2.5') format('woff2')}
+@font-face{font-family:'BC';font-weight:800;src:url('fonts/barlow-cond-800.woff2?v=1.2.5') format('woff2')}
 :root{
   --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);
   --bg:#f2f3f6;--paper:#fff;--ink:#12151c;--muted:#6b7380;--line:#e6e8ec;
@@ -196,10 +196,10 @@ nav button.on{color:var(--accent)}
 .sec:first-child{margin-top:4px}
 .sec .sh{display:flex;justify-content:space-between;font:700 12px/1 BC;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:0 2px 5px}
 .sec .sh b{color:var(--ink);letter-spacing:.02em}
-.suma{display:flex;justify-content:space-between;align-items:center;margin:7px -10px 0;padding:9px 12px 8px;background:#fff4b8;border-top:2px solid #e0c45c;font:700 12px/1 BC;letter-spacing:.07em;text-transform:uppercase;color:#6b6238}
-.suma .sv{display:flex;align-items:baseline;gap:7px}
-.suma b{font:800 22px/1 BC;color:var(--ink);letter-spacing:.01em;text-transform:none}
-.suma .pen{font:700 13px/1 BC;color:var(--red);letter-spacing:.02em;text-transform:none}
+.suma{display:flex;justify-content:space-between;align-items:center;margin:5px -10px 0;padding:6px 12px 5px;background:#f6f7f9;border-top:1px solid var(--line);font:600 11px/1 BC;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.suma .sv{display:flex;align-items:baseline;gap:6px}
+.suma b{font:700 17px/1 BC;color:var(--ink);letter-spacing:.01em;text-transform:none}
+.suma .pen{font:700 12px/1 BC;color:var(--red);letter-spacing:.02em;text-transform:none}
 .cells{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
 .cell{background:#f3f4f7;border-radius:8px;padding:5px 6px 5px;min-height:50px}
 .cell .ci{display:flex;justify-content:space-between;align-items:flex-start;gap:2px;font:700 10.5px/1 BC;color:var(--muted)}
@@ -280,9 +280,9 @@ nav button.on{color:var(--accent)}
   <div class="scrim" id="scrim"></div>
   <div class="sheet" id="sheet"></div>
 </div>
-<script>window.RD_BUILD='1.2.4';</script>
-<script src="config.js?v=1.2.4"></script>
-<script src="logic.js?v=1.2.4"></script>
-<script src="app.js?v=1.2.4"></script>
+<script>window.RD_BUILD='1.2.5';</script>
+<script src="config.js?v=1.2.5"></script>
+<script src="logic.js?v=1.2.5"></script>
+<script src="app.js?v=1.2.5"></script>
 </body>
 </html>
