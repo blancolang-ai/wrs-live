@@ -42,3 +42,62 @@ test('ida y vuelta: sube, lee, ETag/304, quita campos no previstos, borra', asyn
   await wait(2100);
   const g2 = await get({ 'If-None-Match': etag }); assert.equal(g2.status, 200); assert.equal((await g2.json()).live, false);
 });
+
+test('histórico: solo se archiva un rally final; DELETE /data no lo borra; se puede sobrescribir y borrar el archivo', async () => {
+  const mid = synth({ upTo: 3 }); mid.rally = 'Rally Archivo'; mid.date = '2 feb';
+  assert.equal((await up(mid)).status, 200);
+  await wait(2100);
+  let list = await (await fetch(API + '/archive', { headers: { Origin: ORIGIN } })).json();
+  assert.ok(Array.isArray(list.rallies));
+  assert.ok(!list.rallies.some(r => r.slug === 'rally-archivo-2-feb'));
+
+  const fin = synth(); fin.rally = 'Rally Archivo'; fin.date = '2 feb';
+  const u1 = await up(fin); assert.equal(u1.status, 200);
+  const body1 = await u1.json();
+  assert.ok(body1.at);
+  await wait(2100);
+  const live = await (await get()).json();
+  assert.equal(live.live, true);
+  assert.equal(live.updatedAt, live.at);
+  assert.equal(live.data.rally, 'Rally Archivo');
+
+  const lr = await fetch(API + '/archive', { headers: { Origin: ORIGIN } });
+  assert.equal(lr.headers.get('access-control-allow-origin'), ORIGIN);
+  list = await lr.json();
+  const hit = list.rallies.find(r => r.slug === 'rally-archivo-2-feb');
+  assert.ok(hit, JSON.stringify(list));
+  assert.equal(hit.name, 'Rally Archivo');
+  assert.equal(hit.date, '2 feb');
+  assert.ok(hit.winner && hit.winner.dorsal);
+
+  const item = await (await fetch(API + '/archive/rally-archivo-2-feb', { headers: { Origin: ORIGIN } })).json();
+  assert.equal(item.archived, true);
+  assert.equal(item.live, false);
+  assert.equal(item.data.rally, 'Rally Archivo');
+  assert.ok(item.data.pilotos[0].t.TC1);
+  assert.equal(item.data.pilotos[0].telefono, undefined);
+
+  // corrección: mismo slug se sobrescribe
+  const fin2 = synth(); fin2.rally = 'Rally Archivo'; fin2.date = '2 feb'; fin2.venue = 'Pista Z';
+  assert.equal((await up(fin2)).status, 200);
+  await wait(2100);
+  const item2 = await (await fetch(API + '/archive/rally-archivo-2-feb')).json();
+  assert.equal(item2.data.venue, 'Pista Z');
+  list = await (await fetch(API + '/archive')).json();
+  assert.equal(list.rallies.filter(r => r.slug === 'rally-archivo-2-feb').length, 1);
+
+  // borrar el directo no toca el histórico
+  assert.equal((await fetch(API + '/data', { method: 'DELETE', headers: { 'X-Upload-Key': KEY } })).status, 200);
+  await wait(2100);
+  assert.equal((await get().then(r => r.json())).live, false);
+  const still = await (await fetch(API + '/archive/rally-archivo-2-feb')).json();
+  assert.equal(still.archived, true);
+  assert.equal(still.data.venue, 'Pista Z');
+
+  assert.equal((await fetch(API + '/archive/rally-archivo-2-feb', { method: 'DELETE' })).status, 401);
+  assert.equal((await fetch(API + '/archive/rally-archivo-2-feb', { method: 'DELETE', headers: { 'X-Upload-Key': 'mala' } })).status, 401);
+  assert.equal((await fetch(API + '/archive/rally-archivo-2-feb', { method: 'DELETE', headers: { 'X-Upload-Key': KEY } })).status, 200);
+  assert.equal((await fetch(API + '/archive/rally-archivo-2-feb')).status, 404);
+  list = await (await fetch(API + '/archive')).json();
+  assert.ok(!list.rallies.some(r => r.slug === 'rally-archivo-2-feb'));
+});

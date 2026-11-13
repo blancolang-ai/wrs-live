@@ -46,6 +46,16 @@
     }
     return { c, t };
   }
+  /* Posición general tras el tramo ti (null si no corre o ya abandonó). */
+  function generalAfter(m, dorsal, ti) {
+    const r = standings(m, ti).find(x => x.p.dorsal === dorsal);
+    if (!r || r.ab != null || !r.n) return null;
+    return r.pos;
+  }
+  function posGain(prev, now) {
+    if (prev == null || now == null) return null;
+    return prev - now;
+  }
   function incLabel(acc) {
     const parts = [];
     if (acc.c > 0) parts.push('C ' + acc.c);
@@ -200,6 +210,6 @@
   const catShort = c => c === R1 ? 'R1' : c === 'Rally2' ? 'R2' : String(c).slice(0, 3);
   const catCls = c => c === R1 ? 'R1' : 'R2';
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
-  const api = { model, vis, raw, abandonIndex, tramoComplete, curTramo, hasTimes, tramosWithTimes, isFinal, isLive, standings, withDiffs, tramoResults, startOrder, expectedOrder, changes, incCount, incBadges, incAcc, incLabel, scratchRanking, decs, fmt, fmmss, fdif, fpen, ord, catShort, catCls, esc, dayOfSec };
+  const api = { model, vis, raw, abandonIndex, tramoComplete, curTramo, hasTimes, tramosWithTimes, isFinal, isLive, standings, withDiffs, tramoResults, startOrder, expectedOrder, changes, incCount, incBadges, incAcc, incLabel, generalAfter, posGain, scratchRanking, decs, fmt, fmmss, fdif, fpen, ord, catShort, catCls, esc, dayOfSec };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.RD = api;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -220,3 +220,24 @@ test('tramosWithTimes incluye tramos incompletos; la clasificación hasta ese tr
   assert.deepEqual(L.tramosWithTimes(L.model(empty)), []);
   assert.deepEqual(L.tramosWithTimes(L.model(synth({ upTo: 2 }))), [0, 1]);
 });
+
+test('posición general tras cada tramo y puestos ganados o perdidos', () => {
+  const d = synth({ upTo: 3 }), m = L.model(d);
+  const after1 = Object.fromEntries(d.pilotos.map(p => [p.dorsal, L.generalAfter(m, p.dorsal, 0)]));
+  const st1 = L.standings(m, 0).filter(r => r.ab == null && r.n);
+  st1.forEach((r, i) => assert.equal(after1[r.p.dorsal], i + 1));
+  const pFirst = st1[0].p.dorsal, pLast = st1.at(-1).p.dorsal;
+  // mismo orden en el 2º tramo salvo que movamos a alguien
+  const g0 = L.generalAfter(m, pFirst, 0), g1 = L.generalAfter(m, pFirst, 1);
+  assert.equal(L.posGain(g0, g1), g0 - g1);
+  assert.equal(L.posGain(3, 1), 2);
+  assert.equal(L.posGain(1, 3), -2);
+  assert.equal(L.posGain(2, 2), 0);
+  assert.equal(L.posGain(null, 1), null);
+  const four = synth({ upTo: 4 });
+  const q = four.pilotos.find(x => x.dorsal === 12);
+  q.t.TC1 = [50, 3, 1]; // 4 incidencias en TC1: abandono, sin posición
+  const m2 = L.model(four);
+  assert.equal(L.generalAfter(m2, 12, 0), null);
+  assert.equal(L.generalAfter(m2, 12, 1), null);
+});

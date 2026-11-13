@@ -6,20 +6,23 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0b1220">
-<title>Rally en directo · WRSlot Cantabria</title>
+<title>Rally Directo · WRSlot Cantabria</title>
 <meta name="description" content="Tiempos en directo de los rallies de slot WRSlot Cantabria">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
-<link rel="manifest" href="manifest.webmanifest?v=1.3.1">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Rally Directo">
+<link rel="manifest" href="manifest.webmanifest?v=1.4.0">
 <style>
-@font-face{font-family:'Barlow';font-weight:400;src:url('fonts/barlow-400.woff2?v=1.3.1') format('woff2')}
-@font-face{font-family:'Barlow';font-weight:500;src:url('fonts/barlow-500.woff2?v=1.3.1') format('woff2')}
-@font-face{font-family:'Barlow';font-weight:600;src:url('fonts/barlow-600.woff2?v=1.3.1') format('woff2')}
-@font-face{font-family:'Barlow';font-weight:700;src:url('fonts/barlow-700.woff2?v=1.3.1') format('woff2')}
-@font-face{font-family:'BC';font-weight:500;src:url('fonts/barlow-cond-500.woff2?v=1.3.1') format('woff2')}
-@font-face{font-family:'BC';font-weight:600;src:url('fonts/barlow-cond-600.woff2?v=1.3.1') format('woff2')}
-@font-face{font-family:'BC';font-weight:700;src:url('fonts/barlow-cond-700.woff2?v=1.3.1') format('woff2')}
-@font-face{font-family:'BC';font-weight:800;src:url('fonts/barlow-cond-800.woff2?v=1.3.1') format('woff2')}
+@font-face{font-family:'Barlow';font-weight:400;src:url('fonts/barlow-400.woff2?v=1.4.0') format('woff2')}
+@font-face{font-family:'Barlow';font-weight:500;src:url('fonts/barlow-500.woff2?v=1.4.0') format('woff2')}
+@font-face{font-family:'Barlow';font-weight:600;src:url('fonts/barlow-600.woff2?v=1.4.0') format('woff2')}
+@font-face{font-family:'Barlow';font-weight:700;src:url('fonts/barlow-700.woff2?v=1.4.0') format('woff2')}
+@font-face{font-family:'BC';font-weight:500;src:url('fonts/barlow-cond-500.woff2?v=1.4.0') format('woff2')}
+@font-face{font-family:'BC';font-weight:600;src:url('fonts/barlow-cond-600.woff2?v=1.4.0') format('woff2')}
+@font-face{font-family:'BC';font-weight:700;src:url('fonts/barlow-cond-700.woff2?v=1.4.0') format('woff2')}
+@font-face{font-family:'BC';font-weight:800;src:url('fonts/barlow-cond-800.woff2?v=1.4.0') format('woff2')}
 :root{
   --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);
   --bg:#f2f3f6;--paper:#fff;--ink:#12151c;--muted:#6b7380;--line:#e6e8ec;
@@ -38,7 +41,7 @@ button{font-family:inherit;color:inherit;border:0;background:none;padding:0;curs
 .top{background:var(--head);color:#fff;padding:calc(6px + var(--sat)) 12px 8px;display:flex;align-items:center;gap:10px;flex:none;border-bottom:3px solid var(--accent)}
 .top .t1{flex:1;min-width:0}
 .top h1{margin:0;font:800 21px/1.05 BC,sans-serif;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.top .sub{font:500 12px/1.2 Barlow;color:#aab3c5;margin-top:2px;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.top .sub{font:500 12px/1.25 Barlow;color:#aab3c5;margin-top:2px;display:flex;align-items:center;flex-wrap:wrap;gap:4px 6px}
 .live{display:inline-flex;align-items:center;gap:4px;font:700 11px/1 BC;letter-spacing:.08em;color:#fff;background:var(--accent);padding:3px 6px 2px;border-radius:4px}
 .live i{width:6px;height:6px;border-radius:50%;background:#fff;animation:pulse 1.4s infinite}
 .live.fin{background:#3a4458}.live.fin i{display:none}
@@ -207,11 +210,13 @@ nav button.on{color:var(--accent)}
 .suma b{font:700 17px/1 BC;color:var(--ink);letter-spacing:.01em;text-transform:none}
 .suma .pen{font:700 12px/1 BC;color:var(--red);letter-spacing:.02em;text-transform:none}
 .cells{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
-.cell{background:#f3f4f7;border-radius:8px;padding:5px 6px 5px;min-height:50px}
+.cell{background:#f3f4f7;border-radius:8px;padding:5px 6px 5px;min-height:58px}
 .cell .ci{display:flex;justify-content:space-between;align-items:flex-start;gap:2px;font:700 10.5px/1 BC;color:var(--muted)}
 .cell .ci .tgs{margin-left:0;max-width:70%;justify-content:flex-end}
 .cell .cv{font:800 17px/1 BC;margin-top:5px}
 .cell .cp{font:600 10.5px/1 BC;color:var(--muted);margin-top:3px}
+.cell .cg{font:700 11px/1.1 BC;margin-top:3px;display:flex;align-items:center;gap:4px;color:var(--ink)}
+.cell .cg .up{color:var(--up)}.cell .cg .down{color:var(--down)}.cell .cg .eq{color:#b5bcc7}
 .cell.s1{background:var(--r1-bg);box-shadow:inset 0 0 0 1.5px var(--r1)}
 .cell.s2{background:var(--r2-bg);box-shadow:inset 0 0 0 1.5px var(--r2)}
 .cell.na{opacity:.45}
@@ -227,9 +232,31 @@ nav button.on{color:var(--accent)}
 .empty h2{margin:0 0 6px;font:800 26px/1.1 BC}
 .empty p{margin:0;font:500 14.5px/1.4 Barlow;color:var(--muted);max-width:290px}
 .empty small{margin-top:18px;font:500 12px/1.3 Barlow;color:#9aa2ad}
-.net{display:none;color:#ffd27a;font-weight:600}
-.offline .net{display:inline}
-.loading .empty{display:flex}.loading .empty h2,.loading .empty p{visibility:hidden}
+.net{display:none}
+.fresh{display:inline;margin-left:0;font:500 11.5px/1.3 Barlow;color:#aab3c5}
+.fresh.amber{color:#ffd27a}
+.fresh.stale{color:#ff8a80}
+.hist-ico{width:36px;height:36px;border-radius:9px;background:#1d2840;color:#c8cfdd;display:flex;align-items:center;justify-content:center;flex:none}
+.hist-ico svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.arch-ban{display:none;align-items:center;gap:8px;padding:7px 12px;background:#0b1220;color:#fff;font:600 12.5px/1.2 Barlow;border-bottom:2px solid #b7791f;flex:none;z-index:5}
+#app.archived .arch-ban{display:flex}
+.arch-ban span{flex:1;min-width:0}
+.arch-ban button{flex:none;font:700 12px/1 BC;letter-spacing:.03em;background:#fff;color:var(--ink);border-radius:7px;padding:7px 9px}
+.hist{display:none;position:absolute;inset:0;z-index:40;background:var(--bg);flex-direction:column}
+.hist.on{display:flex}
+.hist-h{display:flex;align-items:center;gap:10px;padding:calc(10px + var(--sat)) 14px 10px;background:var(--head);color:#fff;flex:none}
+.hist-h b{flex:1;font:800 20px/1 BC}
+.hist-h button{width:36px;height:36px;border-radius:9px;background:#1d2840;color:#fff;font:700 18px/1 BC}
+.hist-list{flex:1;overflow-y:auto;padding:10px 12px 16px;-webkit-overflow-scrolling:touch}
+.hist-list .empty-h{font:500 14.5px/1.4 Barlow;color:var(--muted);padding:24px 8px;text-align:center}
+.hist-item{display:block;width:100%;text-align:left;background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:8px;box-shadow:0 1px 0 rgba(18,21,28,.06),inset 0 0 0 1px var(--line)}
+.hist-item b{display:block;font:800 18px/1.1 BC}
+.hist-item small{display:block;font:500 12.5px/1.3 Barlow;color:var(--muted);margin-top:3px}
+.a2hs{display:none;position:absolute;left:8px;right:8px;bottom:calc(56px + var(--sab));z-index:15;background:var(--head);color:#fff;font:500 13px/1.35 Barlow;padding:10px 36px 10px 12px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.28)}
+.a2hs.on{display:block}
+.a2hs button{position:absolute;top:6px;right:6px;width:28px;height:28px;color:#fff;font:700 16px/1 BC}
+.empty .hist-open{margin-top:18px;font:700 14px/1 BC;letter-spacing:.03em;background:var(--head);color:#fff;border-radius:10px;padding:11px 16px}
+.loading .empty{display:flex}.loading .empty h2,.loading .empty p,.loading .empty .hist-open{visibility:hidden}
 @media (min-width:760px){
   body{background:#dde1e8}
   #app{max-width:720px;box-shadow:0 0 0 1px #d3d8e0,0 10px 40px rgba(10,20,40,.12)}
@@ -242,13 +269,15 @@ nav button.on{color:var(--accent)}
 <div id="app" class="loading">
   <header class="top">
     <div class="t1">
-      <h1 id="h-rally">Rally en directo</h1>
-      <div class="sub"><span class="live" id="live"><i></i><span>DIRECTO</span></span><span id="h-sub"></span><span class="net" id="net">· sin conexión, reintentando…</span></div>
+      <h1 id="h-rally">Rally Directo</h1>
+      <div class="sub"><span class="live" id="live"><i></i><span>DIRECTO</span></span><span id="h-sub"></span><span class="fresh" id="fresh"></span></div>
     </div>
+    <button type="button" class="hist-ico" id="hist-btn" aria-label="Rallies anteriores" title="Rallies anteriores"><svg viewBox="0 0 24 24"><path d="M4 5h16v4H4zM4 11h16v8H4z"/><path d="M8 15h4"/></svg></button>
     <div class="seg" id="catseg">
       <button data-cat="all" class="on">Todos</button><button data-cat="Rally1" class="r1">R1</button><button data-cat="Rally2" class="r2">R2</button>
     </div>
   </header>
+  <div class="arch-ban" id="arch-ban" hidden><span>Archivo · <b id="arch-name"></b> <span id="arch-date"></span></span><button type="button" id="arch-back">Volver al directo</button></div>
   <main>
     <div class="toast" id="toast"></div>
     <section class="view on" id="v-clas">
@@ -285,13 +314,15 @@ nav button.on{color:var(--accent)}
     <button data-v="tramo"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M10 2h4M12 2v3"/></svg>Tramos</button>
     <button data-v="salida"><svg viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>Orden de salida</button>
   </nav>
-  <div class="empty" id="empty"><div class="flag"><svg viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg></div><h2>Sin rally en directo</h2><p>Cuando empiece el próximo rally, aquí aparecerán los tiempos tramo a tramo. La página se actualiza sola.</p><small>WRSlot Cantabria</small></div>
+  <div class="empty" id="empty"><div class="flag"><svg viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg></div><h2>Sin rally en directo</h2><p>Cuando empiece el próximo rally, aquí aparecerán los tiempos tramo a tramo. La página se actualiza sola.</p><button type="button" class="hist-open" id="empty-hist">Rallies anteriores</button><small>WRSlot Cantabria</small></div>
+  <div class="hist" id="hist"><div class="hist-h"><b>Rallies anteriores</b><button type="button" id="hist-close" aria-label="Cerrar">✕</button></div><div class="hist-list" id="hist-list"></div></div>
+  <div class="a2hs" id="a2hs"><span>Añádela a tu pantalla de inicio: Compartir → Añadir a pantalla de inicio</span><button type="button" id="a2hs-x" aria-label="Cerrar">✕</button></div>
   <div class="scrim" id="scrim"></div>
   <div class="sheet" id="sheet"></div>
 </div>
-<script>window.RD_BUILD='1.3.1';</script>
-<script src="config.js?v=1.3.1"></script>
-<script src="logic.js?v=1.3.1"></script>
-<script src="app.js?v=1.3.1"></script>
+<script>window.RD_BUILD='1.4.0';</script>
+<script src="config.js?v=1.4.0"></script>
+<script src="logic.js?v=1.4.0"></script>
+<script src="app.js?v=1.4.0"></script>
 </body>
 </html>

@@ -1,9 +1,13 @@
 // Rally Directo · Worker: recibe del Mac los datos PÚBLICOS del rally y los sirve a la página.
 //   POST   /upload  (cabecera X-Upload-Key)  -> guarda la última versión
 //   GET    /data                             -> público, CORS, ETag
-//   DELETE /data    (cabecera X-Upload-Key)  -> quita el rally de la web
+//   DELETE /data    (cabecera X-Upload-Key)  -> quita el rally de la web (no borra el histórico)
+//   GET    /archive                          -> público, lista de rallies finalizados
+//   GET    /archive/<slug>                   -> público, un rally archivado
+//   DELETE /archive/<slug> (X-Upload-Key)    -> quita un rally del histórico
 import { DurableObject } from 'cloudflare:workers';
 import { sanitize } from './validate.js';
+import { archiveSlug, isRallyFinal, winnerSummary, isValidSlug, indexEntry } from './archive.js';
 
 const MAX_BYTES = 256 * 1024;
 const te = new TextEncoder();
@@ -51,6 +55,29 @@ export default {
       await stub.clear(); mem = null;
       return json({ ok: true });
     }
+    if (url.pathname === '/archive' && (req.method === 'GET' || req.method === 'HEAD')) {
+      const list = await stub.listArchive();
+      const text = JSON.stringify({ rallies: list });
+      const h = { ...c, 'Cache-Control': 'public, max-age=3, must-revalidate', 'Content-Type': 'application/json; charset=utf-8', 'X-Content-Type-Options': 'nosniff' };
+      return new Response(req.method === 'HEAD' ? null : text, { headers: h });
+    }
+    const arch = url.pathname.match(/^\/archive\/([^/]+)$/);
+    if (arch && (req.method === 'GET' || req.method === 'HEAD')) {
+      const slug = decodeURIComponent(arch[1]);
+      if (!isValidSlug(slug)) return json({ ok: false, error: 'no encontrado' }, 404, c);
+      const item = await stub.readArchive(slug);
+      if (!item) return json({ ok: false, error: 'no encontrado' }, 404, c);
+      const text = JSON.stringify(item);
+      const h = { ...c, 'Cache-Control': 'public, max-age=3, must-revalidate', 'Content-Type': 'application/json; charset=utf-8', 'X-Content-Type-Options': 'nosniff' };
+      return new Response(req.method === 'HEAD' ? null : text, { headers: h });
+    }
+    if (arch && req.method === 'DELETE') {
+      if (!(await keyOk(req.headers.get('X-Upload-Key'), env))) return json({ ok: false, error: 'clave incorrecta' }, 401);
+      const slug = decodeURIComponent(arch[1]);
+      if (!isValidSlug(slug)) return json({ ok: false, error: 'no encontrado' }, 404);
+      const ok = await stub.deleteArchive(slug);
+      return json(ok ? { ok: true } : { ok: false, error: 'no encontrado' }, ok ? 200 : 404);
+    }
     if (url.pathname === '/') return json({ ok: true, service: 'rally-directo' }, 200, c);
     return json({ ok: false, error: 'no encontrado' }, 404, c);
   }
@@ -64,12 +91,36 @@ export class Store extends DurableObject {
   }
   async write(data) {
     const version = ((await this.ctx.storage.get('version')) || 0) + 1, at = new Date().toISOString();
-    const text = JSON.stringify({ live: true, version, at, data });
+    const text = JSON.stringify({ live: true, version, at, updatedAt: at, data });
     await this.ctx.storage.put({ state: { version, text }, version });
+    if (isRallyFinal(data)) await this._archivePut(data, at);
     return { version, at };
   }
   async clear() {
     const version = ((await this.ctx.storage.get('version')) || 0) + 1;
     await this.ctx.storage.delete('state'); await this.ctx.storage.put('version', version);
+  }
+  async _archivePut(data, at) {
+    const slug = archiveSlug(data);
+    if (!isValidSlug(slug)) return;
+    const winner = winnerSummary(data);
+    const item = { live: false, archived: true, slug, at, updatedAt: at, data };
+    const idx = (await this.ctx.storage.get('archiveIndex')) || [];
+    const entry = indexEntry(slug, data, winner, at);
+    const next = [entry, ...idx.filter(e => e.slug !== slug)];
+    await this.ctx.storage.put({ ['archive:' + slug]: item, archiveIndex: next });
+  }
+  async listArchive() {
+    const idx = (await this.ctx.storage.get('archiveIndex')) || [];
+    return idx.map(e => ({ slug: e.slug, name: e.name, date: e.date, winner: e.winner || null }));
+  }
+  async readArchive(slug) { return (await this.ctx.storage.get('archive:' + slug)) || null; }
+  async deleteArchive(slug) {
+    const item = await this.ctx.storage.get('archive:' + slug);
+    if (!item) return false;
+    const idx = ((await this.ctx.storage.get('archiveIndex')) || []).filter(e => e.slug !== slug);
+    await this.ctx.storage.delete('archive:' + slug);
+    await this.ctx.storage.put('archiveIndex', idx);
+    return true;
   }
 }

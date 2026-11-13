@@ -6,7 +6,7 @@ const API = (window.RD_API || '').replace(/\/$/, '');
 const POLL_MS = 10000;
 let M = null, DATA = null, VERSION = null, AT = null;
 
-const S = { view: 'clas', cat: 'all', after: null, ti: null, tiManual: false, day: 1, pil: null,
+const S = { view: 'clas', cat: 'all', after: null, ti: null, tiManual: false, day: 1, pil: null, archive: null,
   favs: new Set((() => { try { return JSON.parse(localStorage.getItem('rd-favs') || '[]'); } catch { return []; } })()) };
 const fcat = r => S.cat === 'all' || r.p.cat === S.cat;
 const posOf = r => S.cat === 'all' ? r.pos : r.cpos;
@@ -31,7 +31,8 @@ function renderHeader() {
   document.title = (d.rally || 'Rally') + ' · ' + (final ? 'Final' : 'Directo');
   $('live').className = 'live' + (final ? ' fin' : '');
   $('live').querySelector('span').textContent = final ? 'FINAL' : 'DIRECTO';
-  $('h-sub').textContent = [d.venue, final ? d.date : (AT ? 'act. ' + hhmmss(AT) : d.date)].filter(Boolean).join(' · ');
+  $('h-sub').textContent = [d.venue, (final || S.archive) ? d.date : ''].filter(Boolean).join(' · ');
+  renderFresh();
   const seg = $('catseg');
   if (M.CATS.length > 1) {
     seg.style.display = '';
@@ -218,7 +219,9 @@ function renderPil() {
       if (!x.v) return `<div class="cell na"><div class="ci"><span>${esc(id)}</span></div><div class="cv">—</div><div class="cp">&nbsp;</div></div>`;
       if (x.tm === 999) return `<div class="cell"><div class="ci"><span>${esc(id)}</span><span>${tags(x)}</span></div><div class="cv" style="color:#9aa2ad">Ab.</div><div class="cp">&nbsp;</div></div>`;
       sum += x.tm; any = true;
-      return `<div class="cell ${x.scratch ? (p.cat === 'Rally1' ? 's1' : 's2') : ''}"><div class="ci"><span>${esc(id)}</span><span>${tags(x)}</span></div><div class="cv num ${x.c || x.t ? 'inc' : ''}">${fmt(x.tm)}</div><div class="cp">${ord(x.pos)} · ${esc(catShort(p.cat))} ${ord(x.cpos)}</div></div>`;
+      const nowP = L.generalAfter(M, S.pil, ti), prevP = ti > 0 ? L.generalAfter(M, S.pil, ti - 1) : null, dg = L.posGain(prevP, nowP);
+      const gH = nowP == null ? '' : `<div class="cg">Gral. ${ord(nowP)}${dg == null ? '' : dg > 0 ? ' <span class="up">↑' + dg + '</span>' : dg < 0 ? ' <span class="down">↓' + (-dg) + '</span>' : ' <span class="eq">=</span>'}</div>`;
+      return `<div class="cell ${x.scratch ? (p.cat === 'Rally1' ? 's1' : 's2') : ''}"><div class="ci"><span>${esc(id)}</span><span>${tags(x)}</span></div><div class="cv num ${x.c || x.t ? 'inc' : ''}">${fmt(x.tm)}</div><div class="cp">${ord(x.pos)} · ${esc(catShort(p.cat))} ${ord(x.cpos)}</div>${gH}</div>`;
     }).join('');
     const pen = p.pen[si] ? `<span class="pen">+${fpen(p.pen[si])}</span>` : '';
     return `<div class="sec"><div class="sh"><span>${esc(s.name)}</span></div><div class="cells">${cells}</div><div class="suma"><span>Suma</span><span class="sv"><b class="num">${any ? fmt(Math.round(sum * 1000) / 1000) : '—'}</b>${pen}</span></div></div>`;
@@ -282,13 +285,14 @@ function toast(msg, fn) { const t = $('toast'); t.textContent = msg; t.classList
 /* ---------- datos en directo ---------- */
 function applyData(j) {
   const app = $('app'); app.classList.remove('loading');
-  if (!j || !j.live || !j.data) { M = null; DATA = null; VERSION = j ? j.version : null; app.classList.add('noRally'); closePil(); return; }
+  if (S.archive) return;
+  if (!j || !j.live || !j.data) { M = null; DATA = null; VERSION = j ? j.version : null; AT = null; app.classList.add('noRally'); closePil(); renderFresh(); return; }
   app.classList.remove('noRally');
-  if (j.version === VERSION && M) { AT = j.at; renderHeader(); return; }
+  if (j.version === VERSION && M) { AT = j.updatedAt || j.at; renderHeader(); return; }
   const firstLoad = !M, sameRally = DATA && DATA.rally === j.data.rally && DATA.tramos.length === j.data.tramos.length;
   const ch = sameRally ? L.changes(DATA, j.data) : [];
   if (!sameRally) { S.ti = null; S.tiManual = false; S.after = null; lastNew = null; if (!M || !j.data.cats.includes(S.cat)) S.cat = 'all'; }
-  DATA = j.data; VERSION = j.version; AT = j.at; M = L.model(DATA);
+  DATA = j.data; VERSION = j.version; AT = j.updatedAt || j.at; M = L.model(DATA);
   const nw = ch.filter(c => c.ti != null);
   if (nw.length) lastNew = nw.reduce((a, b) => (b.ti > a.ti ? b : a));
   flashD = new Set(ch.map(c => c.d));
@@ -320,8 +324,22 @@ async function checkBuild() {
     location.replace(u.toString());
   } catch (e) {}
 }
+function renderFresh() {
+  const el = $('fresh'); if (!el) return;
+  if ($('app').classList.contains('offline')) { el.textContent = 'Sin conexión'; el.className = 'fresh stale'; return; }
+  if (S.archive || !AT) { el.textContent = ''; el.className = 'fresh'; return; }
+  const ms = Date.now() - new Date(AT).getTime(), final = M && L.isFinal(M);
+  if (!isFinite(ms)) { el.textContent = ''; el.className = 'fresh'; return; }
+  const min = Math.max(0, Math.round(ms / 60000));
+  let text, cls = 'fresh';
+  if (!final && min >= 15) { text = 'Sin datos nuevos desde hace ' + min + ' min'; cls += ' stale'; }
+  else if (ms < 45000) text = 'Última actualización hace un momento';
+  else { text = 'Última actualización hace ' + min + ' min'; if (!final && min >= 5) cls += ' amber'; }
+  el.textContent = text; el.className = cls;
+}
 async function poll() {
   clearTimeout(timer);
+  if (S.archive) { checkBuild(); renderFresh(); if (!document.hidden) timer = setTimeout(poll, POLL_MS); return; }
   try {
     const r = await fetch(API + '/data', { cache: 'no-cache' });
     if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -330,10 +348,99 @@ async function poll() {
     failures++; if (failures >= 2 || !M) $('app').classList.add('offline');
     if ($('app').classList.contains('loading') && failures >= 2) { $('app').classList.remove('loading'); $('app').classList.add('noRally'); }
   }
+  renderFresh();
   checkBuild();
   if (!document.hidden) timer = setTimeout(poll, failures ? Math.min(30000, POLL_MS * (1 + failures)) : POLL_MS);
 }
+function hashSlug() {
+  const m = (location.hash || '').match(/^#\/rally\/([a-z0-9-]+)$/i);
+  return m ? m[1].toLowerCase() : null;
+}
+function showArchBanner(name, date) {
+  const ban = $('arch-ban');
+  $('arch-name').textContent = name || 'Rally';
+  $('arch-date').textContent = date ? '· ' + date : '';
+  ban.hidden = false;
+  $('app').classList.add('archived');
+}
+function hideArchBanner() { $('arch-ban').hidden = true; $('app').classList.remove('archived'); }
+async function openArchive(slug) {
+  closePil();
+  try {
+    const r = await fetch(API + '/archive/' + encodeURIComponent(slug), { cache: 'no-cache' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    if (!j || !j.data) throw new Error('sin datos');
+    S.archive = slug; S.after = null; S.tiManual = false; S.ti = null; lastNew = null;
+    DATA = j.data; M = L.model(DATA); AT = j.updatedAt || j.at || null;
+    $('app').classList.remove('loading', 'noRally', 'offline');
+    showArchBanner(j.data.rally, j.data.date);
+    closeHist();
+    renderAll();
+    if ((location.hash || '') !== '#/rally/' + slug) location.hash = '#/rally/' + slug;
+  } catch (e) {
+    toast('No encuentro ese rally');
+    if (S.archive === slug) leaveArchive();
+    else {
+      if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+      if (!M) poll();
+    }
+  }
+}
+function leaveArchive() {
+  if (!S.archive && !hashSlug()) { hideArchBanner(); return; }
+  S.archive = null; hideArchBanner(); closePil();
+  M = null; DATA = null; VERSION = null; AT = null;
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+  $('app').classList.add('loading');
+  poll();
+}
+async function syncRoute() {
+  const slug = hashSlug();
+  if (slug) { if (S.archive !== slug) await openArchive(slug); }
+  else if (S.archive) leaveArchive();
+}
+function closeHist() { $('hist').classList.remove('on'); }
+async function openHist() {
+  const box = $('hist-list');
+  box.innerHTML = '<div class="empty-h">Cargando…</div>';
+  $('hist').classList.add('on');
+  try {
+    const r = await fetch(API + '/archive', { cache: 'no-cache' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    const list = (j && j.rallies) || [];
+    if (!list.length) { box.innerHTML = '<div class="empty-h">Todavía no hay rallies terminados en el histórico.</div>'; return; }
+    box.innerHTML = list.map(e => {
+      const w = e.winner && e.winner.nombre ? ' · ' + esc(e.winner.nombre) : '';
+      return `<button type="button" class="hist-item" data-slug="${esc(e.slug)}"><b>${esc(e.name || e.slug)}</b><small>${esc(e.date || '')}${w}</small></button>`;
+    }).join('');
+  } catch (e) {
+    box.innerHTML = '<div class="empty-h">No se ha podido cargar el histórico. Comprueba la conexión.</div>';
+  }
+}
+$('hist-btn').onclick = openHist;
+$('empty-hist').onclick = openHist;
+$('hist-close').onclick = closeHist;
+$('hist-list').onclick = e => { const b = e.target.closest('[data-slug]'); if (b) openArchive(b.dataset.slug); };
+$('arch-back').onclick = leaveArchive;
+function maybeA2hs() {
+  const el = $('a2hs'); if (!el) return;
+  try { if (localStorage.getItem('rd-a2hs') === '1') return; } catch (e) { return; }
+  const ua = navigator.userAgent || '';
+  const ios = /iPhone|iPad|iPod/.test(ua);
+  const safari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|Android/.test(ua);
+  const standalone = navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+  if (ios && safari && !standalone) {
+    el.classList.add('on');
+    $('a2hs-x').onclick = () => { el.classList.remove('on'); try { localStorage.setItem('rd-a2hs', '1'); } catch (e) {} };
+  }
+}
 document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); else clearTimeout(timer); });
 window.addEventListener('online', poll);
-window.__rd = { applyData, S, get M() { return M; }, BUILD };
-poll();
+window.addEventListener('hashchange', () => { syncRoute(); });
+window.__rd = { applyData, S, get M() { return M; }, BUILD, openArchive, leaveArchive };
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=' + (BUILD || '0'), { updateViaCache: 'none' }).catch(() => {});
+maybeA2hs();
+setInterval(renderFresh, 15000);
+if (hashSlug()) syncRoute(); else poll();
