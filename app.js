@@ -108,13 +108,15 @@ function renderScratchRank(lim) {
   const groups = L.hasTimes(M) ? L.scratchRanking(M, lim).filter(g => S.cat === 'all' || g.cat === S.cat) : [];
   if (!groups.length) { el.hidden = true; el.innerHTML = ''; return; }
   const wasOpen = !!(el.querySelector('details') && el.querySelector('details').open);
+  const scratchTitle = cat => cat === 'Rally1' ? 'Scratch' : (cat === 'Rally2' ? catShort(cat) : cat);
   const sum = groups.map(g => {
     const bits = g.rows.map(r => esc(r.p.nombre) + ' ' + r.n);
-    return `<span class="srk-s ${catCls(g.cat)}">${esc(catShort(g.cat))}</span> ${bits.join(' · ')}`;
+    return `<span class="srk-s ${catCls(g.cat)}">${esc(scratchTitle(g.cat))}</span> ${bits.join(' · ')}`;
   }).join('<span class="srk-sep">·</span>');
   const body = groups.map(g => {
     const lines = g.rows.map(r => `<div class="srk-row" data-d="${r.p.dorsal}"><span class="srk-pl">${r.place}º</span><span class="dor">${r.p.dorsal}</span><span class="nm">${esc(r.p.nombre)}</span><span class="srk-n">${r.n}</span></div>`).join('');
-    return `<div class="srk-cat ${catCls(g.cat)}"><div class="srk-h">${esc(g.cat)}</div>${lines}</div>`;
+    const title = g.cat === 'Rally1' ? 'Scratch' : g.cat;
+    return `<div class="srk-cat ${catCls(g.cat)}"><div class="srk-h">${esc(title)}</div>${lines}</div>`;
   }).join('');
   el.hidden = false;
   el.innerHTML = `<details class="srk-d"${wasOpen ? ' open' : ''}><summary><span class="srk-title">Ranking de scratch</span><span class="srk-sum">${sum}</span></summary><div class="srk-body">${body}</div></details>`;
