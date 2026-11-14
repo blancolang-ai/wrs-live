@@ -1,5 +1,5 @@
-/* Rally Directo · antiguo programa JXA (ya no se usa en el Mac; se conserva por si hace falta consultarlo).
- * El programa actual es «Rally Directo.command» + subir.pl + parser.pl (bash 3.2 + Perl 5.18 + AppleScript). */
+/* WRS-Live · antiguo programa JXA (ya no se usa en el Mac; se conserva por si hace falta consultarlo).
+ * El programa actual es «WRS-Live.command» + subir.pl + parser.pl (bash 3.2 + Perl 5.18 + AppleScript). */
 ObjC.import('Foundation');
 var app = Application.currentApplication(); app.includeStandardAdditions = true;
 var SERVER = 'https://rally-directo.blancolang.workers.dev';
@@ -36,7 +36,7 @@ function run(argv) {
   var path = cfg.excel && exists(cfg.excel) ? cfg.excel : null;
   if (path) {
     try {
-      var r = app.displayDialog('¿Subo este Excel?\n\n' + path.split('/').pop() + '\n(' + path.replace(/\/[^\/]*$/, '') + ')', { buttons: ['Elegir otro', 'Sí, este'], defaultButton: 'Sí, este', givingUpAfter: 20, withTitle: 'Rally Directo' });
+      var r = app.displayDialog('¿Subo este Excel?\n\n' + path.split('/').pop() + '\n(' + path.replace(/\/[^\/]*$/, '') + ')', { buttons: ['Elegir otro', 'Sí, este'], defaultButton: 'Sí, este', givingUpAfter: 20, withTitle: 'WRS-Live' });
       if (r.buttonReturned === 'Elegir otro') path = choose();
     } catch (e) { log('Cancelado.'); return; }
   } else path = choose();
@@ -60,8 +60,8 @@ function run(argv) {
     }
   };
   log('');
-  log('🏁 Rally Directo · subiendo «' + path.split('/').pop() + '»');
-  log('   Página pública: https://blancolang-ai.github.io/rally-directo/');
+  log('🏁 WRS-Live · subiendo «' + path.split('/').pop() + '»');
+  log('   Página pública: https://blancolang-ai.github.io/wrs-live/');
   log('   Cada vez que guardes el Excel (⌘S) se suben los tiempos. Deja esta ventana abierta durante el rally.');
   log('   Para terminar: cierra esta ventana.');
   log('');

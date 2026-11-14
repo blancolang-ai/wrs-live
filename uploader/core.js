@@ -1,4 +1,4 @@
-/* Rally Directo · bucle del programa de subida (independiente de la plataforma).
+/* WRS-Live · bucle del programa de subida (independiente de la plataforma).
  * io: { now(), sleep(s), log(msg), stat(path)->{m,z}|null, open(path)->getXml, post(json)->{status,body}, hash(s) } */
 var UploaderCore = (function () {
   'use strict';

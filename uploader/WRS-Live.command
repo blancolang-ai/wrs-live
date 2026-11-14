@@ -1,8 +1,8 @@
 #!/bin/bash
-# Rally Directo · doble clic para empezar a subir los tiempos del rally.
+# WRS-Live · doble clic para empezar a subir los tiempos del rally.
 # Compatible con macOS 10.13 High Sierra y posteriores (bash 3.2, Perl 5.18, AppleScript clásico; sin JXA).
 cd "$(dirname "$0")" || exit 1
-printf '\033]0;Rally Directo\007'
+printf '\033]0;WRS-Live\007'
 
 # UTF-8 en la Terminal y en los diálogos (acentos, «», ✅…)
 if locale -a 2>/dev/null | grep -E -q '^es_ES\.(UTF-8|utf8)$'; then
@@ -91,7 +91,7 @@ confirm_excel() {
     sub esc { my $s = shift; $s =~ s/\\/\\\\/g; $s =~ s/"/\\"/g; return $s; }
     my ($name, $parent) = @ARGV;
     print "try\n";
-    print "  set r to display dialog \"¿Subo este Excel?\" & return & return & \"" . esc($name) . "\" & return & \"(" . esc($parent) . ")\" buttons {\"Elegir otro\", \"Sí, este\"} default button \"Sí, este\" giving up after 20 with title \"Rally Directo\"\n";
+    print "  set r to display dialog \"¿Subo este Excel?\" & return & return & \"" . esc($name) . "\" & return & \"(" . esc($parent) . ")\" buttons {\"Elegir otro\", \"Sí, este\"} default button \"Sí, este\" giving up after 20 with title \"WRS-Live\"\n";
     print "  if gave up of r then\n    return \"Sí, este\"\n  end if\n";
     print "  return button returned of r\n";
     print "on error\n  return \"__CANCEL__\"\nend try\n";
@@ -129,12 +129,12 @@ choose_loop() {
 }
 
 if [ -z "$NODIALOG" ] && [ -z "$RD_EXCEL" ] && command -v osascript >/dev/null 2>&1; then
-  if TMP=$(mktemp -d /tmp/rally-directo.XXXXXX 2>/dev/null); then
+  if TMP=$(mktemp -d /tmp/wrs-live.XXXXXX 2>/dev/null); then
     :
-  elif TMP=$(mktemp -d -t rally-directo 2>/dev/null); then
+  elif TMP=$(mktemp -d -t wrs-live 2>/dev/null); then
     :
   else
-    TMP="/tmp/rally-directo.$$"
+    TMP="/tmp/wrs-live.$$"
     mkdir -p "$TMP"
   fi
   trap 'rm -rf "$TMP"' EXIT

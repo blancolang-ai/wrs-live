@@ -1,8 +1,8 @@
 {
-  "name": "Rally Directo",
-  "short_name": "Rally Directo",
-  "start_url": "/rally-directo/",
-  "scope": "/rally-directo/",
+  "name": "WRS-Live",
+  "short_name": "WRS-Live",
+  "start_url": "/wrs-live/",
+  "scope": "/wrs-live/",
   "display": "standalone",
   "background_color": "#0b1220",
   "theme_color": "#0b1220",

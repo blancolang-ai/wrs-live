@@ -1,4 +1,4 @@
-# Rally Directo · lector de la hoja del rally (.xlsx) para Perl 5.18 (el de macOS 10.13+).
+# WRS-Live · lector de la hoja del rally (.xlsx) para Perl 5.18 (el de macOS 10.13+).
 # Solo módulos CORE y /usr/bin/unzip. Salida: SOLO los datos públicos del rally + avisos.
 # Si no se indica una hoja, usa la pestaña inmediatamente anterior a «Plantilla».
 # Mantiene el mismo criterio que uploader/parser.js (las pruebas comparan ambos).

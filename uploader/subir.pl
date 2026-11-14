@@ -1,5 +1,5 @@
-# Rally Directo · bucle de subida para macOS 10.13+ (Perl 5.18, módulos CORE, curl, unzip).
-# Lo arranca «Rally Directo.command». Vigila el Excel y, cada vez que se guarda, sube SOLO los datos públicos.
+# WRS-Live · bucle de subida para macOS 10.13+ (Perl 5.18, módulos CORE, curl, unzip).
+# Lo arranca «WRS-Live.command». Vigila el Excel y, cada vez que se guarda, sube SOLO los datos públicos.
 use 5.018;
 use strict;
 use warnings;
@@ -86,7 +86,7 @@ if ($key eq '') {
   exit 1;
 }
 
-my $tmp = tempdir('rally-directo-XXXXXX', TMPDIR => 1, CLEANUP => 1);
+my $tmp = tempdir('wrs-live-XXXXXX', TMPDIR => 1, CLEANUP => 1);
 chmod 0700, $tmp;
 my $hdr = File::Spec->catfile($tmp, 'cabecera.txt');
 {
@@ -179,8 +179,8 @@ my $st = {
 };
 
 logmsg('');
-logmsg('🏁 Rally Directo · subiendo «' . basename($excel) . '»');
-logmsg('   Página pública: https://blancolang-ai.github.io/rally-directo/');
+logmsg('🏁 WRS-Live · subiendo «' . basename($excel) . '»');
+logmsg('   Página pública: https://blancolang-ai.github.io/wrs-live/');
 logmsg('   Cada vez que guardes el Excel (⌘S) se suben los tiempos. Deja esta ventana abierta durante el rally.');
 logmsg('   Para terminar: cierra esta ventana.');
 logmsg('');

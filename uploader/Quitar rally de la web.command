@@ -1,5 +1,5 @@
 #!/bin/bash
-# Rally Directo · quita el rally de la página pública (vuelve a «Sin rally en directo»).
+# WRS-Live · quita el rally de la página pública (vuelve a «Sin rally en directo»).
 # Compatible con macOS 10.13 High Sierra y posteriores (bash, curl; sin JXA).
 cd "$(dirname "$0")" || exit 1
 if locale -a 2>/dev/null | grep -E -q '^es_ES\.(UTF-8|utf8)$'; then

@@ -1,4 +1,4 @@
-/* Rally Directo · lógica pura (clasificación, diferencias, scratch, orden de salida, formato).
+/* WRS-Live · lógica pura (clasificación, diferencias, scratch, orden de salida, formato).
  * Sin DOM: la usan la página (window.RD) y las pruebas (Node). */
 (function (root) {
   'use strict';

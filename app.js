@@ -1,5 +1,5 @@
 'use strict';
-/* Rally Directo · interfaz. Los datos llegan SOLO del Worker (GET /data) cada ~10 s. */
+/* WRS-Live · interfaz. Los datos llegan SOLO del Worker (GET /data) cada ~10 s. */
 const L = window.RD, $ = id => document.getElementById(id);
 const { fmt, fmmss, fdif, fpen, ord, catShort, catCls, esc, incLabel } = L;
 const API = (window.RD_API || '').replace(/\/$/, '');

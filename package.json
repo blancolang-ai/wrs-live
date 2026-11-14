@@ -1,6 +1,6 @@
 {
-  "name": "rally-directo",
-  "version": "1.4.2",
+  "name": "wrs-live",
+  "version": "2.0.0",
   "private": true,
   "scripts": {
     "test": "node --test test/logic.test.mjs test/parser.test.mjs test/uploader.test.mjs test/perl-parser.test.mjs test/perl-uploader.test.mjs test/version.test.mjs test/archive.test.mjs && cd worker && npm test"

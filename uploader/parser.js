@@ -1,4 +1,4 @@
-/* Rally Directo · lector de la hoja del rally (.xlsx) sin dependencias.
+/* WRS-Live · lector de la hoja del rally (.xlsx) sin dependencias.
  * En el Mac el programa usa parser.pl (Perl 5.18). Este archivo se mantiene para las pruebas en Node.
  * Entrada: getXml(rutaDentroDelZip) -> string | null. Salida: SOLO los datos públicos del rally + avisos.
  * Si no se indica una hoja, usa la pestaña inmediatamente anterior a «Plantilla»
