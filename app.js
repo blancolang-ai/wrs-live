@@ -13,6 +13,7 @@ const posOf = r => S.cat === 'all' ? r.pos : r.cpos;
 let flashD = new Set(), lastNew = null;
 const T = () => M.T, ccol = c => c === 'Rally1' ? 'r1' : 'r2';
 const chg = (a, b) => { if (a == null || b == null) return ''; const d = a - b; return d > 0 ? `<small class="up">▲${d}</small>` : d < 0 ? `<small class="down">▼${-d}</small>` : `<small class="eq">=</small>`; };
+const LIM_TAG = '<span class="limtag" title="Con una incidencia más, abandono">⚠ Al límite</span>';
 const incidBlock = (c, t) => {
   const n = (c || 0) + (t || 0);
   return `<b class="${n ? 'inc' : ''}">${n}</b><small>${incLabel({ c: c || 0, t: t || 0 }) || '&nbsp;'}</small>`;
@@ -87,16 +88,16 @@ function renderClas() {
     if (r.ab != null) l2 = `Abandono en ${Tt[r.ab].id}`;
     else if (isPend) { const nx = r.last == null ? 0 : r.last + 1; l2 = Tt[nx] ? `<span style="color:#b7791f;font-weight:600">${Tt[nx].id} por salir</span>` : ''; }
     else if (r.last != null) { const x = L.tramoResults(M, r.last).res.find(z => z.p.dorsal === p.dorsal); l2 = `${Tt[r.last].id} <span class="${x.c || x.t ? 'inc' : ''}">${fmt(x.tm)}</span> · ${ord(S.cat === 'all' ? x.pos : x.cpos)}${tags(x)}`; }
-    const accN = (r.incC || 0) + (r.incT || 0);
+    const accN = (r.incC || 0) + (r.incT || 0), lim3 = L.rowAtLimit(r);
     const tot = r.ab != null ? 'Ab.' : (r.n ? fmt(r.tot) : '—');
     const pen = (r.pen && r.ab == null ? `<small>pen. +${fpen(r.pen)}</small>` : '') + (fin && r.ab == null && r.n ? `<small style="color:var(--muted);font-weight:600">${fmmss(r.tot)}</small>` : '');
     const sub = x => x.d1 != null && Math.abs(x.d1 - x.dp) > 1e-6 ? '1º ' + fdif(x.d1) : '';
     const dif = r.ab != null ? '' : isPend ? (pr && pr.dp != null ? `<span class="dp grey">${fdif(pr.dp)}</span><small>${sub(pr)}</small>` : '<span class="dp lead">—</span>')
       : (r === lead ? `<span class="dp lead">—</span><small>Líder</small>` : (r.dp == null ? `<span class="pend">—</span>` : `<span class="dp">${fdif(r.dp)}</span><small>${sub(r)}</small>`));
-    return (isPend && r === pendL[0] ? sep : '') + `<div class="row ${catCls(p.cat)} ${r.ab != null ? 'ab' : ''} ${S.favs.has(p.dorsal) ? 'fav' : ''} ${flashD.has(p.dorsal) ? 'flash' : ''}" data-d="${p.dorsal}">
+    return (isPend && r === pendL[0] ? sep : '') + `<div class="row ${catCls(p.cat)} ${r.ab != null ? 'ab' : ''} ${lim3 ? 'lim' : ''} ${S.favs.has(p.dorsal) ? 'fav' : ''} ${flashD.has(p.dorsal) ? 'flash' : ''}" data-d="${p.dorsal}">
       <div class="pos">${r.ab != null ? '–' : pos}${ch}</div><div class="dor">${p.dorsal}</div>
       <div style="min-width:0"><div class="nm">${esc(p.nombre)}</div><div class="nm2">${l2}</div></div>
-      <div class="incid num">${accN ? incidBlock(r.incC, r.incT) : ''}</div>
+      <div class="incid num">${accN ? incidBlock(r.incC, r.incT) : ''}${lim3 ? LIM_TAG : ''}</div>
       <div class="tot num" ${isPend ? 'style="color:#8a93a0"' : ''}>${tot}${pen}</div><div class="dif num">${dif}</div></div>`;
   }).join('');
   renderScratchRank(lim);
@@ -238,7 +239,7 @@ function renderPil() {
      <div><label>Posición</label><b>${ra.ab != null ? 'Ab.' : ra.n ? ord(ra.pos) : '—'}</b><small>${ra.ab != null ? T()[ra.ab].id : ra.n ? esc(catShort(p.cat)) + ' ' + ord(ra.cpos) : '&nbsp;'}</small></div>
      <div><label>Total</label><b class="num">${ra.ab != null || !ra.n ? '—' : fmt(ra.tot)}</b>${fin && ra.ab == null && ra.n ? `<small>${fmmss(ra.tot)}</small>` : ''}<small style="color:var(--red)">${ra.pen && ra.ab == null ? 'pen. +' + fpen(ra.pen) : (fin ? '' : '&nbsp;')}</small></div>
      <div><label>Dif. ant.</label><b class="num dpk">${r && r.dp != null ? fdif(r.dp) : '—'}</b><small>${r && r.d1 != null && Math.abs(r.d1 - r.dp) > 1e-6 ? '1º ' + fdif(r.d1) : '&nbsp;'}</small></div>
-     <div><label>Incid.</label>${incidBlock(ninc.c, ninc.t)}</div>
+     <div class="${L.atLimit(ninc.c, ninc.t, ra && ra.ab) ? 'klim' : ''}"><label>Incid.</label>${incidBlock(ninc.c, ninc.t)}${L.atLimit(ninc.c, ninc.t, ra && ra.ab) ? LIM_TAG : ''}</div>
    </div>
    <div class="secs">${secs}${spark(p)}${pens.length ? `<div class="pnote">Penalización: ${pens.join(', ')}</div>` : ''}</div>`;
   $('pstar').onclick = () => { S.favs.has(p.dorsal) ? S.favs.delete(p.dorsal) : S.favs.add(p.dorsal); try { localStorage.setItem('rd-favs', JSON.stringify([...S.favs])); } catch {} renderAll(); };

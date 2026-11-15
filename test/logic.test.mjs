@@ -242,3 +242,21 @@ test('posición general tras cada tramo y puestos ganados o perdidos', () => {
   assert.equal(L.generalAfter(m2, 12, 0), null);
   assert.equal(L.generalAfter(m2, 12, 1), null);
 });
+test('al límite: exactamente 3 incidencias acumuladas (sin abandono), también en «Ver tras…»', () => {
+  const d = synth({ upTo: 6 });
+  const P = Object.fromEntries(d.pilotos.map(p => [p.dorsal, p]));
+  P[1].t.TC1[1] = 1;                       // Alfa: 1 C en TC1…
+  P[1].t.TC3[2] = 2;                       // …y 2 T en TC3 → 3 tras TC3
+  P[11].t.TC2[1] = 2; P[11].t.TC4[2] = 2;  // Delta: 2 tras TC2, 4 en TC4 → abandono
+  P[12].t.TC1[1] = 3;                      // Eco: 3 desde TC1
+  const m = L.model(d);
+  const lim = ti => L.standings(m, ti).filter(L.rowAtLimit).map(r => r.p.dorsal).sort((a, b) => a - b);
+  assert.deepEqual(lim(0), [12]);          // tras TC1: solo Eco
+  assert.deepEqual(lim(1), [12]);          // tras TC2: Delta lleva 2, Bravo 1
+  assert.deepEqual(lim(2), [1, 12]);       // tras TC3: Alfa llega a 3
+  assert.deepEqual(lim(5), [1, 12]);       // Delta abandona en TC4 con 4: no está «al límite», es Ab.
+  const delta = L.standings(m, 5).find(r => r.p.dorsal === 11);
+  assert.equal(delta.ab, 3); assert.equal(L.rowAtLimit(delta), false);
+  assert.equal(L.atLimit(2, 1, null), true); assert.equal(L.atLimit(3, 0, 4), false); assert.equal(L.atLimit(2, 0, null), false); assert.equal(L.atLimit(4, 0, null), false);
+  assert.equal(L.ABANDON_INC, 4);
+});

@@ -56,6 +56,10 @@
     if (prev == null || now == null) return null;
     return prev - now;
   }
+  /* Al límite: lleva exactamente 3 incidencias acumuladas (con la 4ª abandona) y no ha abandonado. */
+  const ABANDON_INC = 4;
+  function atLimit(c, t, ab) { return ab == null && incCount(c) + incCount(t) === ABANDON_INC - 1; }
+  const rowAtLimit = r => !!r && atLimit(r.incC, r.incT, r.ab);
   function incLabel(acc) {
     const parts = [];
     if (acc.c > 0) parts.push('C ' + acc.c);
@@ -211,6 +215,6 @@
   const catShort = c => c === R1 ? 'R1' : c === 'Rally2' ? 'R2' : String(c).slice(0, 3);
   const catCls = c => c === R1 ? 'R1' : 'R2';
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
-  const api = { model, vis, raw, abandonIndex, tramoComplete, curTramo, hasTimes, tramosWithTimes, isFinal, isLive, standings, withDiffs, tramoResults, startOrder, expectedOrder, changes, incCount, incBadges, incAcc, incLabel, generalAfter, posGain, scratchRanking, decs, fmt, fmmss, fdif, fpen, ord, catShort, catCls, esc, dayOfSec };
+  const api = { model, vis, raw, abandonIndex, tramoComplete, curTramo, hasTimes, tramosWithTimes, isFinal, isLive, standings, withDiffs, tramoResults, startOrder, expectedOrder, changes, incCount, incBadges, incAcc, ABANDON_INC, atLimit, rowAtLimit, incLabel, generalAfter, posGain, scratchRanking, decs, fmt, fmmss, fdif, fpen, ord, catShort, catCls, esc, dayOfSec };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.RD = api;
 })(typeof window !== 'undefined' ? window : globalThis);
