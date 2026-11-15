@@ -196,7 +196,7 @@
     return out;
   }
   /* ---------- formato (todo en segundos; los tiempos llevan el símbolo " de segundos) ---------- */
-  const UNIT = '"';
+  const UNIT = '\u00a0"';
   function decs(s) { const r = Math.round(s * 1000) / 1000; return Math.abs(r - Math.round(r * 10) / 10) > 0.0005 ? 3 : 1; }
   function fmt(s, o) {
     if (s == null) return '—'; if (s === 999) return 'Ab.';
