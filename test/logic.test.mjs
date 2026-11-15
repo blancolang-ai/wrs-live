@@ -260,3 +260,41 @@ test('al límite: exactamente 3 incidencias acumuladas (sin abandono), también 
   assert.equal(L.atLimit(2, 1, null), true); assert.equal(L.atLimit(3, 0, 4), false); assert.equal(L.atLimit(2, 0, null), false); assert.equal(L.atLimit(4, 0, null), false);
   assert.equal(L.ABANDON_INC, 4);
 });
+test('scratch absoluto: si el mejor tiempo del tramo es de un R2, no hay scratch R1; si es de un R1, R2 conserva el suyo; empate, los dos', () => {
+  const sc = tr => tr.res.filter(r => r.scratch).map(r => r.p.dorsal).sort((a, b) => a - b);
+  // TC1: Eco (R2) hace el mejor absoluto → solo Eco
+  const d = synth({ upTo: 3 }); const P = Object.fromEntries(d.pilotos.map(p => [p.dorsal, p]));
+  P[12].t.TC1[0] = 95;
+  // TC2: Alfa (R1) es el mejor absoluto → Alfa y el mejor R2 (como antes)
+  // TC3: empate absoluto Bravo (R1) = Delta (R2) → los dos
+  P[2].t.TC3[0] = 90; P[11].t.TC3[0] = 90;
+  const m = L.model(d);
+  assert.deepEqual(sc(L.tramoResults(m, 0)), [12]);
+  assert.equal(L.tramoResults(m, 0).best.Rally1, Math.min(P[1].t.TC1[0], P[2].t.TC1[0], P[3].t.TC1[0])); // el mejor R1 sigue calculándose…
+  assert.equal(L.tramoResults(m, 0).scr.Rally1, null);    // …pero no es scratch
+  const tc2 = L.tramoResults(m, 1); const r2best = Math.min(P[11].t.TC2[0], P[12].t.TC2[0]);
+  assert.deepEqual(sc(tc2).length, 2); assert.equal(tc2.res.find(r => r.scratch && r.p.cat === 'Rally2').tm, r2best);
+  assert.deepEqual(sc(L.tramoResults(m, 2)), [2, 11]);
+  // ranking de scratch: Alfa pierde TC1; Eco lo gana
+  const n = cat => Object.fromEntries((L.scratchRanking(m, 2).find(g => g.cat === cat) || { rows: [] }).rows.map(r => [r.p.dorsal, r.n]));
+  // cuenta esperada: R1 solo en TC2 (el mejor R1 de TC2) y TC3 (Bravo, empate absoluto)
+  const r1tc2 = L.tramoResults(m, 1).res.filter(r => r.scratch && r.p.cat === 'Rally1').map(r => r.p.dorsal);
+  const exp1 = {}; [...r1tc2, 2].forEach(d => exp1[d] = (exp1[d] || 0) + 1);
+  assert.deepEqual(n('Rally1'), exp1);
+  assert.equal(n('Rally2')[12] >= 1, true);
+  // «Ver tras TC1»: solo Eco tiene scratch
+  assert.deepEqual(L.scratchRanking(m, 0).map(g => g.cat), ['Rally2']);
+});
+test('scratch absoluto en directo (provisional): R1 sin scratch mientras un R2 tenga el mejor absoluto, hasta que un R1 lo bata', () => {
+  const d = synth({ upTo: 1 }); const P = Object.fromEntries(d.pilotos.map(p => [p.dorsal, p]));
+  // solo han pasado Delta (R2, 99) y Alfa (R1, 100)
+  d.pilotos.forEach(p => { if (p.dorsal !== 1 && p.dorsal !== 11) delete p.t.TC1; });
+  P[11].t.TC1[0] = 99;
+  let m = L.model(d);
+  assert.equal(L.tramoComplete(m, 0), false);
+  assert.deepEqual(L.tramoResults(m, 0).res.filter(r => r.scratch).map(r => r.p.dorsal), [11]);
+  // llega Bravo (R1) con 98: bate a Delta → Bravo scratch R1 y Delta conserva el de R2
+  const d2 = JSON.parse(JSON.stringify(d)); d2.pilotos.find(p => p.dorsal === 2).t.TC1 = [98, 0, 0];
+  m = L.model(d2);
+  assert.deepEqual(L.tramoResults(m, 0).res.filter(r => r.scratch).map(r => r.p.dorsal).sort((a, b) => a - b), [2, 11]);
+});

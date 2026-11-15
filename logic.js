@@ -67,7 +67,8 @@
     return parts.join(' · ');
   }
   /* Los 2 primeros puestos de scratch por categoría (empates comparten puesto; máx. 3 líneas).
-     Misma regla que el sombreado: el mejor tiempo de la categoría en cada tramo, también en directo (sin esperar a que terminen todos). */
+     Misma regla que el sombreado (tramoResults): el mejor de la categoría en cada tramo, pero sin scratch R1 si el mejor
+     absoluto es de un R2; también en directo (sin esperar a que terminen todos). */
   function scratchRanking(m, limit = m.T.length - 1) {
     const n = {};
     for (let ti = 0; ti <= limit; ti++) {
@@ -145,7 +146,7 @@
     });
     return list;
   }
-  /* resultados de un tramo: posiciones, scratch por categoría */
+  /* resultados de un tramo: posiciones, scratch por categoría (R1 solo si también es el mejor absoluto) */
   function tramoResults(m, ti) {
     const key = 'tr' + ti; if (m.cache.has(key)) return m.cache.get(key);
     const res = m.P.map(p => { const v = raw(m, p, ti); return { p, v: !!v, tm: v ? v[0] : null, c: v ? v[1] : 0, t: v ? v[2] : 0 }; });
@@ -154,8 +155,14 @@
     const done = res.filter(r => r.v && r.tm !== 999).sort((a, b) => a.tm - b.tm || a.p.dorsal - b.p.dorsal);
     done.forEach((r, i) => r.pos = i + 1);
     m.CATS.forEach(c => done.filter(r => r.p.cat === c).forEach((r, i) => r.cpos = i + 1));
-    res.forEach(r => r.scratch = r.v && r.tm !== 999 && r.tm === best[r.p.cat]);
-    const out = { res, done, best }; m.cache.set(key, out); return out;
+    /* Scratch: el mejor de cada categoría, salvo Rally1: si el mejor tiempo absoluto del tramo es de otra
+       categoría (un R2), Rally1 no tiene scratch en ese tramo. Empate absoluto R1-R2: scratch para los dos.
+       En directo es provisional: se recalcula con cada tiempo nuevo. */
+    const abs = done.length ? done[0].tm : null;
+    const scr = { ...best };
+    if (scr[R1] != null && abs != null && scr[R1] > abs) scr[R1] = null;
+    res.forEach(r => r.scratch = r.v && r.tm !== 999 && scr[r.p.cat] != null && r.tm === scr[r.p.cat]);
+    const out = { res, done, best, scr }; m.cache.set(key, out); return out;
   }
   /* orden de salida del día «day» (1 = 2º día…). Se fija por categoría cuando todos sus pilotos
      en carrera tienen tiempo en todos los tramos de la última sección del día anterior.

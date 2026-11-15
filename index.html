@@ -9,20 +9,20 @@
 <title>WRS-Live · WRSlot Cantabria</title>
 <meta name="description" content="Tiempos en directo de los rallies de slot WRSlot Cantabria">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon-180.png?v=2.2.0">
+<link rel="apple-touch-icon" href="icon-180.png?v=2.3.0">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="WRS-Live">
-<link rel="manifest" href="manifest.webmanifest?v=2.2.0">
+<link rel="manifest" href="manifest.webmanifest?v=2.3.0">
 <style>
-@font-face{font-family:'Barlow';font-weight:400;src:url('fonts/barlow-400.woff2?v=2.2.0') format('woff2')}
-@font-face{font-family:'Barlow';font-weight:500;src:url('fonts/barlow-500.woff2?v=2.2.0') format('woff2')}
-@font-face{font-family:'Barlow';font-weight:600;src:url('fonts/barlow-600.woff2?v=2.2.0') format('woff2')}
-@font-face{font-family:'Barlow';font-weight:700;src:url('fonts/barlow-700.woff2?v=2.2.0') format('woff2')}
-@font-face{font-family:'BC';font-weight:500;src:url('fonts/barlow-cond-500.woff2?v=2.2.0') format('woff2')}
-@font-face{font-family:'BC';font-weight:600;src:url('fonts/barlow-cond-600.woff2?v=2.2.0') format('woff2')}
-@font-face{font-family:'BC';font-weight:700;src:url('fonts/barlow-cond-700.woff2?v=2.2.0') format('woff2')}
-@font-face{font-family:'BC';font-weight:800;src:url('fonts/barlow-cond-800.woff2?v=2.2.0') format('woff2')}
+@font-face{font-family:'Barlow';font-weight:400;src:url('fonts/barlow-400.woff2?v=2.3.0') format('woff2')}
+@font-face{font-family:'Barlow';font-weight:500;src:url('fonts/barlow-500.woff2?v=2.3.0') format('woff2')}
+@font-face{font-family:'Barlow';font-weight:600;src:url('fonts/barlow-600.woff2?v=2.3.0') format('woff2')}
+@font-face{font-family:'Barlow';font-weight:700;src:url('fonts/barlow-700.woff2?v=2.3.0') format('woff2')}
+@font-face{font-family:'BC';font-weight:500;src:url('fonts/barlow-cond-500.woff2?v=2.3.0') format('woff2')}
+@font-face{font-family:'BC';font-weight:600;src:url('fonts/barlow-cond-600.woff2?v=2.3.0') format('woff2')}
+@font-face{font-family:'BC';font-weight:700;src:url('fonts/barlow-cond-700.woff2?v=2.3.0') format('woff2')}
+@font-face{font-family:'BC';font-weight:800;src:url('fonts/barlow-cond-800.woff2?v=2.3.0') format('woff2')}
 :root{
   --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);
   --bg:#f2f3f6;--paper:#fff;--ink:#12151c;--muted:#6b7380;--line:#e6e8ec;
@@ -293,7 +293,7 @@ nav button.on{color:var(--accent)}
 <div id="app" class="loading">
   <header class="top">
     <div class="t1">
-      <div class="brand"><img src="logo-wrslot.webp?v=2.2.0" alt="WRSlot Cantabria" width="480" height="107"><span>WRS-Live</span></div>
+      <div class="brand"><img src="logo-wrslot.webp?v=2.3.0" alt="WRSlot Cantabria" width="480" height="107"><span>WRS-Live</span></div>
       <h1 id="h-rally">WRS-Live</h1>
       <div class="sub"><span class="live" id="live"><i></i><span>DIRECTO</span></span><span id="h-sub"></span><span class="fresh" id="fresh"></span></div>
     </div>
@@ -339,15 +339,15 @@ nav button.on{color:var(--accent)}
     <button data-v="tramo"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M10 2h4M12 2v3"/></svg>Tramos</button>
     <button data-v="salida"><svg viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>Orden de salida</button>
   </nav>
-  <div class="empty" id="empty"><div class="eb"><img src="logo-wrslot.webp?v=2.2.0" alt="WRSlot Cantabria" width="480" height="107"><span>WRS-Live</span></div><h2>Sin rally en directo</h2><p>Cuando empiece el próximo rally, aquí aparecerán los tiempos tramo a tramo. La página se actualiza sola.</p><button type="button" class="hist-open" id="empty-hist">Rallies anteriores</button><small>WRS-Live · WRSlot Cantabria</small></div>
+  <div class="empty" id="empty"><div class="eb"><img src="logo-wrslot.webp?v=2.3.0" alt="WRSlot Cantabria" width="480" height="107"><span>WRS-Live</span></div><h2>Sin rally en directo</h2><p>Cuando empiece el próximo rally, aquí aparecerán los tiempos tramo a tramo. La página se actualiza sola.</p><button type="button" class="hist-open" id="empty-hist">Rallies anteriores</button><small>WRS-Live · WRSlot Cantabria</small></div>
   <div class="hist" id="hist"><div class="hist-h"><b>Rallies anteriores</b><button type="button" id="hist-close" aria-label="Cerrar">✕</button></div><div class="hist-list" id="hist-list"></div></div>
   <div class="a2hs" id="a2hs"><span>Instala WRS-Live en tu pantalla de inicio: Compartir → Añadir a pantalla de inicio</span><button type="button" id="a2hs-x" aria-label="Cerrar">✕</button></div>
   <div class="scrim" id="scrim"></div>
   <div class="sheet" id="sheet"></div>
 </div>
-<script>window.RD_BUILD='2.2.0';</script>
-<script src="config.js?v=2.2.0"></script>
-<script src="logic.js?v=2.2.0"></script>
-<script src="app.js?v=2.2.0"></script>
+<script>window.RD_BUILD='2.3.0';</script>
+<script src="config.js?v=2.3.0"></script>
+<script src="logic.js?v=2.3.0"></script>
+<script src="app.js?v=2.3.0"></script>
 </body>
 </html>
