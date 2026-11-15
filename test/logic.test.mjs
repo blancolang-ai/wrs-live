@@ -60,6 +60,17 @@ test('categoría única (formato antiguo): orden inverso para todos', () => {
 test('final: todos los tramos completos', () => {
   const m = L.model(synth()); assert.equal(L.isFinal(m), true); assert.equal(L.isLive(m), false);
   assert.equal(L.isFinal(L.model(synth({ upTo: 7 }))), false);
+  // un abandono no impide el final si el resto tiene todos los tiempos
+  const ab = L.model(synth({ abandon: { d: 2, ti: 2 } }));
+  assert.equal(L.isFinal(ab), true);
+  // falta el tiempo de un piloto no abandonado en el último tramo
+  const miss = synth();
+  delete miss.pilotos[0].t.TC8;
+  assert.equal(L.isFinal(L.model(miss)), false);
+  // incidencias sin tiempo (0) no cuentan como tiempo: el rally no está finalizado
+  const inc = synth();
+  inc.pilotos[0].t.TC8 = [0, 1, 0];
+  assert.equal(L.isFinal(L.model(inc)), false);
 });
 test('formato en segundos y minutos', () => {
   assert.equal(L.fmt(154.6), '154,6\u00a0"'); assert.equal(L.fmt(2935.561), '2.935,561\u00a0"'); assert.equal(L.fmmss(2935.561), '48\'55,561\u00a0"');

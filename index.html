@@ -9,20 +9,20 @@
 <title>WRS-Live · WRSlot Cantabria</title>
 <meta name="description" content="Tiempos en directo de los rallies de slot WRSlot Cantabria">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon-180.png?v=2.4.0">
+<link rel="apple-touch-icon" href="icon-180.png?v=2.5.0">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="WRS-Live">
-<link rel="manifest" href="manifest.webmanifest?v=2.4.0">
+<link rel="manifest" href="manifest.webmanifest?v=2.5.0">
 <style>
-@font-face{font-family:'Barlow';font-weight:400;src:url('fonts/barlow-400.woff2?v=2.4.0') format('woff2')}
-@font-face{font-family:'Barlow';font-weight:500;src:url('fonts/barlow-500.woff2?v=2.4.0') format('woff2')}
-@font-face{font-family:'Barlow';font-weight:600;src:url('fonts/barlow-600.woff2?v=2.4.0') format('woff2')}
-@font-face{font-family:'Barlow';font-weight:700;src:url('fonts/barlow-700.woff2?v=2.4.0') format('woff2')}
-@font-face{font-family:'BC';font-weight:500;src:url('fonts/barlow-cond-500.woff2?v=2.4.0') format('woff2')}
-@font-face{font-family:'BC';font-weight:600;src:url('fonts/barlow-cond-600.woff2?v=2.4.0') format('woff2')}
-@font-face{font-family:'BC';font-weight:700;src:url('fonts/barlow-cond-700.woff2?v=2.4.0') format('woff2')}
-@font-face{font-family:'BC';font-weight:800;src:url('fonts/barlow-cond-800.woff2?v=2.4.0') format('woff2')}
+@font-face{font-family:'Barlow';font-weight:400;src:url('fonts/barlow-400.woff2?v=2.5.0') format('woff2')}
+@font-face{font-family:'Barlow';font-weight:500;src:url('fonts/barlow-500.woff2?v=2.5.0') format('woff2')}
+@font-face{font-family:'Barlow';font-weight:600;src:url('fonts/barlow-600.woff2?v=2.5.0') format('woff2')}
+@font-face{font-family:'Barlow';font-weight:700;src:url('fonts/barlow-700.woff2?v=2.5.0') format('woff2')}
+@font-face{font-family:'BC';font-weight:500;src:url('fonts/barlow-cond-500.woff2?v=2.5.0') format('woff2')}
+@font-face{font-family:'BC';font-weight:600;src:url('fonts/barlow-cond-600.woff2?v=2.5.0') format('woff2')}
+@font-face{font-family:'BC';font-weight:700;src:url('fonts/barlow-cond-700.woff2?v=2.5.0') format('woff2')}
+@font-face{font-family:'BC';font-weight:800;src:url('fonts/barlow-cond-800.woff2?v=2.5.0') format('woff2')}
 :root{
   --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);
   --bg:#f2f3f6;--paper:#fff;--ink:#12151c;--muted:#6b7380;--line:#e6e8ec;
@@ -45,9 +45,9 @@ button{font-family:inherit;color:inherit;border:0;background:none;padding:0;curs
 .top .brand span{font:800 13px/1 BC,sans-serif;letter-spacing:.06em;color:#fff;padding-left:7px;border-left:1px solid rgba(255,255,255,.28);white-space:nowrap}
 .top h1{margin:0;font:800 21px/1.05 BC,sans-serif;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .top .sub{font:500 12px/1.25 Barlow;color:#aab3c5;margin-top:2px;display:flex;align-items:center;flex-wrap:wrap;gap:4px 6px}
-.live{display:inline-flex;align-items:center;gap:4px;font:700 11px/1 BC;letter-spacing:.08em;color:#fff;background:var(--accent);padding:3px 6px 2px;border-radius:4px}
+.live{display:inline-flex;align-items:center;gap:4px;font:700 11px/1 BC;letter-spacing:.08em;color:#fff;background:var(--accent);padding:3px 6px 2px;border-radius:4px;white-space:nowrap}
 .live i{width:6px;height:6px;border-radius:50%;background:#fff;animation:pulse 1.4s infinite}
-.live.fin{background:#3a4458}.live.fin i{display:none}
+.live.fin{background:#3a4458;letter-spacing:.03em;font-size:12px;padding:4px 8px 3px}.live.fin i{display:none}
 @keyframes pulse{50%{opacity:.25}}
 .seg{display:flex;background:#1d2840;border-radius:9px;padding:2px;flex:none}
 .seg button{font:700 13px/1 BC;letter-spacing:.03em;padding:8px 9px 7px;border-radius:7px;color:#c8cfdd}
@@ -95,6 +95,8 @@ main{flex:1;min-height:0;position:relative}
 .dp.lead{background:none;box-shadow:none;color:var(--muted)}
 .dpk{background:#fff3c4;border-radius:5px;padding:2px 5px 1px;box-shadow:inset 0 0 0 1px #f0d77a}
 .dif small{display:block;font:500 11.5px/1 BC;color:var(--muted);margin-top:3px}
+.dif .d1{font:700 13px/1.05 BC;color:var(--ink);margin-top:3px;white-space:nowrap}
+.colh .d1h{font-size:11px;color:var(--ink)}
 .ab .nm,.ab .tot,.ab .pos{color:#9aa2ad}
 .ab .dor{background:#b7bec8}
 .inc{color:var(--red)!important}
@@ -107,6 +109,7 @@ main{flex:1;min-height:0;position:relative}
 /* clasificación */
 #v-clas .row,#v-clas .colh{grid-template-columns:28px 34px 1fr 56px 72px 56px;column-gap:5px}
 #v-clas .row{min-height:46px;height:auto;padding-top:5px;padding-bottom:5px;align-items:center}
+#v-clas .toth,#v-clas .tot{text-align:center}
 #v-clas .incid{text-align:right;line-height:1.1}
 #v-clas .incid b{display:block;font:800 16px/1 BC}
 #v-clas .incid small{display:block;font:600 10px/1.15 BC;color:var(--muted);margin-top:2px;white-space:nowrap}
@@ -209,6 +212,7 @@ nav button.on{color:var(--accent)}
 .kpis label{display:block;font:600 10px/1 BC;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
 .kpis b{font:800 18px/1 BC}
 .kpis small{display:block;font:600 11px/1 BC;color:var(--muted);margin-top:3px}
+.kpis .d1{font:700 13px/1.05 BC;color:var(--ink)}
 .secs{flex:1;overflow-y:auto;padding:4px 10px 10px}
 .sec{margin-top:10px}
 .sec:first-child{margin-top:4px}
@@ -293,7 +297,7 @@ nav button.on{color:var(--accent)}
 <div id="app" class="loading">
   <header class="top">
     <div class="t1">
-      <div class="brand"><img src="logo-wrslot.webp?v=2.4.0" alt="WRSlot Cantabria" width="480" height="107"><span>WRS-Live</span></div>
+      <div class="brand"><img src="logo-wrslot.webp?v=2.5.0" alt="WRSlot Cantabria" width="480" height="107"><span>WRS-Live</span></div>
       <h1 id="h-rally">WRS-Live</h1>
       <div class="sub"><span class="live" id="live"><i></i><span>DIRECTO</span></span><span id="h-sub"></span><span class="fresh" id="fresh"></span></div>
     </div>
@@ -314,7 +318,7 @@ nav button.on{color:var(--accent)}
         <div class="ticker" id="ticker"></div>
       </div>
       <div id="scratch-rank" class="srk" hidden></div>
-      <div class="colh"><span style="text-align:center">Pos</span><span>Nº</span><span>Piloto · último tramo</span><span style="text-align:right">Incid.<br><span style="font-size:9.5px;color:var(--muted)">acum.</span></span><span style="text-align:right">Total</span><span style="text-align:right;color:var(--ink)">Dif. ant.<br><span style="font-size:9.5px;color:var(--muted)">Dif. 1º</span></span></div>
+      <div class="colh"><span style="text-align:center">Pos</span><span>Nº</span><span>Piloto · último tramo</span><span style="text-align:right">Incid.<br><span style="font-size:9.5px;color:var(--muted)">acum.</span></span><span class="toth">Total</span><span style="text-align:right;color:var(--ink)">Dif. ant.<br><span class="d1h">Dif. 1º</span></span></div>
       <div class="list" id="clas"></div>
     </section>
     <section class="view" id="v-tramo">
@@ -339,15 +343,15 @@ nav button.on{color:var(--accent)}
     <button data-v="tramo"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M10 2h4M12 2v3"/></svg>Tramos</button>
     <button data-v="salida"><svg viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>Orden de salida</button>
   </nav>
-  <div class="empty" id="empty"><div class="eb"><img src="logo-wrslot.webp?v=2.4.0" alt="WRSlot Cantabria" width="480" height="107"><span>WRS-Live</span></div><h2>Sin rally en directo</h2><p>Cuando empiece el próximo rally, aquí aparecerán los tiempos tramo a tramo. La página se actualiza sola.</p><button type="button" class="hist-open" id="empty-hist">Rallies anteriores</button><small>WRS-Live · WRSlot Cantabria</small></div>
+  <div class="empty" id="empty"><div class="eb"><img src="logo-wrslot.webp?v=2.5.0" alt="WRSlot Cantabria" width="480" height="107"><span>WRS-Live</span></div><h2>Sin rally en directo</h2><p>Cuando empiece el próximo rally, aquí aparecerán los tiempos tramo a tramo. La página se actualiza sola.</p><button type="button" class="hist-open" id="empty-hist">Rallies anteriores</button><small>WRS-Live · WRSlot Cantabria</small></div>
   <div class="hist" id="hist"><div class="hist-h"><b>Rallies anteriores</b><button type="button" id="hist-close" aria-label="Cerrar">✕</button></div><div class="hist-list" id="hist-list"></div></div>
   <div class="a2hs" id="a2hs"><span>Instala WRS-Live en tu pantalla de inicio: Compartir → Añadir a pantalla de inicio</span><button type="button" id="a2hs-x" aria-label="Cerrar">✕</button></div>
   <div class="scrim" id="scrim"></div>
   <div class="sheet" id="sheet"></div>
 </div>
-<script>window.RD_BUILD='2.4.0';</script>
-<script src="config.js?v=2.4.0"></script>
-<script src="logic.js?v=2.4.0"></script>
-<script src="app.js?v=2.4.0"></script>
+<script>window.RD_BUILD='2.5.0';</script>
+<script src="config.js?v=2.5.0"></script>
+<script src="logic.js?v=2.5.0"></script>
+<script src="app.js?v=2.5.0"></script>
 </body>
 </html>

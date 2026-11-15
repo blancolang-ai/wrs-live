@@ -29,9 +29,9 @@ const hhmmss = iso => { try { return new Date(iso).toLocaleTimeString('es-ES', {
 function renderHeader() {
   const d = M.data, final = L.isFinal(M);
   $('h-rally').textContent = d.rally || 'Rally';
-  document.title = (d.rally || 'Rally') + ' · ' + (final ? 'Final' : 'Directo');
+  document.title = (d.rally || 'Rally') + ' · ' + (final ? 'Rally finalizado' : 'Directo');
   $('live').className = 'live' + (final ? ' fin' : '');
-  $('live').querySelector('span').textContent = final ? 'FINAL' : 'DIRECTO';
+  $('live').querySelector('span').textContent = final ? 'Rally finalizado' : 'DIRECTO';
   $('h-sub').textContent = [d.venue, (final || S.archive) ? d.date : ''].filter(Boolean).join(' · ');
   renderFresh();
   const seg = $('catseg');
@@ -92,9 +92,9 @@ function renderClas() {
     const accN = (r.incC || 0) + (r.incT || 0), lim3 = L.rowAtLimit(r);
     const tot = r.ab != null ? 'Ab.' : (r.n ? fmt(r.tot) : '—');
     const pen = (r.pen && r.ab == null ? `<small>pen. +${fpen(r.pen)}</small>` : '') + (fin && r.ab == null && r.n ? `<small style="color:var(--muted);font-weight:600">${fmmss(r.tot)}</small>` : '');
-    const sub = x => x.d1 != null && Math.abs(x.d1 - x.dp) > 1e-6 ? '1º ' + fdif(x.d1) : '';
-    const dif = r.ab != null ? '' : isPend ? (pr && pr.dp != null ? `<span class="dp grey">${fdif(pr.dp)}</span><small>${sub(pr)}</small>` : '<span class="dp lead">—</span>')
-      : (r === lead ? `<span class="dp lead">—</span><small>Líder</small>` : (r.dp == null ? `<span class="pend">—</span>` : `<span class="dp">${fdif(r.dp)}</span><small>${sub(r)}</small>`));
+    const sub = x => x.d1 != null && Math.abs(x.d1 - x.dp) > 1e-6 ? `<small class="d1">1º ${fdif(x.d1)}</small>` : '';
+    const dif = r.ab != null ? '' : isPend ? (pr && pr.dp != null ? `<span class="dp grey">${fdif(pr.dp)}</span>${sub(pr)}` : '<span class="dp lead">—</span>')
+      : (r === lead ? `<span class="dp lead">—</span><small>Líder</small>` : (r.dp == null ? `<span class="pend">—</span>` : `<span class="dp">${fdif(r.dp)}</span>${sub(r)}`));
     return (isPend && r === pendL[0] ? sep : '') + `<div class="row ${catCls(p.cat)} ${r.ab != null ? 'ab' : ''} ${lim3 ? 'lim' : ''} ${S.favs.has(p.dorsal) ? 'fav' : ''} ${flashD.has(p.dorsal) ? 'flash' : ''}" data-d="${p.dorsal}">
       <div class="pos">${r.ab != null ? '–' : pos}${ch}</div><div class="dor">${p.dorsal}</div>
       <div style="min-width:0"><div class="nm">${esc(p.nombre)}</div><div class="nm2">${l2}</div></div>
@@ -158,7 +158,7 @@ function renderTramo() {
       <div class="pos">${S.cat === 'all' ? r.pos : r.cpos}</div><div class="dor">${p.dorsal}</div>
       <div class="nm">${esc(p.nombre)}</div>
       <div class="tm num ${r.scratch ? (p.cat === 'Rally1' ? 's1' : 's2') : ''} ${r.c || r.t ? 'inc' : ''}">${fmt(r.tm)}${tags(r)}</div>
-      <div class="dif num">${i === 0 ? '<span class="dp lead">—</span>' : `<span class="dp">${fdif(r.tm - done[i - 1].tm)}</span>${i > 1 ? `<small>1º ${fdif(r.tm - best)}</small>` : ''}`}</div>
+      <div class="dif num">${i === 0 ? '<span class="dp lead">—</span>' : `<span class="dp">${fdif(r.tm - done[i - 1].tm)}</span>${i > 1 ? `<small class="d1">1º ${fdif(r.tm - best)}</small>` : ''}`}</div>
       <div class="gral">${ord(gp)}${ch}</div></div>`;
   }).join('');
   h += pend.map((r, i) => `<div class="row ${catCls(r.p.cat)}" data-d="${r.p.dorsal}"><div class="pos pend">–</div><div class="dor" style="opacity:.55">${r.p.dorsal}</div><div class="nm" style="color:#8a93a0">${esc(r.p.nombre)}</div><div class="slot" style="text-align:right;${i === 0 && isCur && done.length ? 'color:var(--accent);font-weight:700;font-style:normal' : ''}">${i === 0 && isCur && done.length ? '● en tramo' : 'por salir'}${(ir => ir ? tags(ir) : '')(L.incRaw(M, r.p, ti))}</div><div></div><div></div></div>`).join('');
@@ -239,7 +239,7 @@ function renderPil() {
    <div class="kpis">
      <div><label>Posición</label><b>${ra.ab != null ? 'Ab.' : ra.n ? ord(ra.pos) : '—'}</b><small>${ra.ab != null ? T()[ra.ab].id : ra.n ? esc(catShort(p.cat)) + ' ' + ord(ra.cpos) : '&nbsp;'}</small></div>
      <div><label>Total</label><b class="num">${ra.ab != null || !ra.n ? '—' : fmt(ra.tot)}</b>${fin && ra.ab == null && ra.n ? `<small>${fmmss(ra.tot)}</small>` : ''}<small style="color:var(--red)">${ra.pen && ra.ab == null ? 'pen. +' + fpen(ra.pen) : (fin ? '' : '&nbsp;')}</small></div>
-     <div><label>Dif. ant.</label><b class="num dpk">${r && r.dp != null ? fdif(r.dp) : '—'}</b><small>${r && r.d1 != null && Math.abs(r.d1 - r.dp) > 1e-6 ? '1º ' + fdif(r.d1) : '&nbsp;'}</small></div>
+     <div><label>Dif. ant.</label><b class="num dpk">${r && r.dp != null ? fdif(r.dp) : '—'}</b>${r && r.d1 != null && Math.abs(r.d1 - r.dp) > 1e-6 ? `<small class="d1">1º ${fdif(r.d1)}</small>` : '<small>&nbsp;</small>'}</div>
      <div class="${L.atLimit(ninc.c, ninc.t, ra && ra.ab) ? 'klim' : ''}"><label>Incid.</label>${incidBlock(ninc.c, ninc.t)}${L.atLimit(ninc.c, ninc.t, ra && ra.ab) ? LIM_TAG : ''}</div>
    </div>
    <div class="secs">${secs}${spark(p)}${pens.length ? `<div class="pnote">Penalización: ${pens.join(', ')}</div>` : ''}</div>`;
