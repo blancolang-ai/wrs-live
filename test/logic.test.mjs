@@ -62,8 +62,9 @@ test('final: todos los tramos completos', () => {
   assert.equal(L.isFinal(L.model(synth({ upTo: 7 }))), false);
 });
 test('formato en segundos y minutos', () => {
-  assert.equal(L.fmt(154.6), '154,6'); assert.equal(L.fmt(2935.561), '2.935,561'); assert.equal(L.fmmss(2935.561), '48:55,561');
-  assert.equal(L.fmmss(65.5), '1:05,5'); assert.equal(L.fdif(0), '±0,0'); assert.equal(L.fdif(1.25), '+1,250'); assert.equal(L.fpen(10), '10 s');
+  assert.equal(L.fmt(154.6), '154,6"'); assert.equal(L.fmt(2935.561), '2.935,561"'); assert.equal(L.fmmss(2935.561), '48\'55,561"');
+  assert.equal(L.fmmss(65.5), '1\'05,5"'); assert.equal(L.fdif(0), '±0,0"'); assert.equal(L.fdif(1.25), '+1,250"'); assert.equal(L.fpen(10), '10"'); assert.equal(L.fpen(2.5), '2,5"');
+  assert.equal(L.fmt(null), '—'); assert.equal(L.fmt(12.5, { u: false }), '12,5');
   assert.equal(L.esc('<b>"x"</b>'), '&lt;b&gt;&quot;x&quot;&lt;/b&gt;');
 });
 test('cambios entre versiones: detecta tiempos nuevos y corregidos', () => {

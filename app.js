@@ -60,7 +60,7 @@ function renderClas() {
   const seqI = seq.findIndex(x => x === S.after);
   $('aft-prev').disabled = !timed.length || seqI >= seq.length - 1;
   $('aft-next').disabled = !timed.length || seqI <= 0;
-  if (L.isFinal(M)) { const w = L.standings(M).filter(fcat)[0]; $('ticker').innerHTML = w ? `Ganador${S.cat === 'all' ? '' : ' ' + esc(catShort(S.cat))}: <b>${esc(w.p.nombre)}</b> · ${fmt(w.tot)} s · ${fmmss(w.tot)}` : ''; }
+  if (L.isFinal(M)) { const w = L.standings(M).filter(fcat)[0]; $('ticker').innerHTML = w ? `Ganador${S.cat === 'all' ? '' : ' ' + esc(catShort(S.cat))}: <b>${esc(w.p.nombre)}</b> · ${fmt(w.tot)} · ${fmmss(w.tot)}` : ''; }
   else if (lastNew) { const p = M.byD[lastNew.d], v = p && L.raw(M, p, lastNew.ti); $('ticker').innerHTML = !v ? '' : v[0] === 999 ? `<b>${esc(p.nombre)}</b> abandona en ${Tt[lastNew.ti].id}` : `Último: <b>${Tt[lastNew.ti].id} · ${esc(p.nombre)}</b> ${fmt(v[0])}`; }
   else if (L.hasTimes(M)) { const n = M.P.filter(p => L.vis(M, ct, p.dorsal)).length; $('ticker').innerHTML = `<b>${Tt[ct].id}</b> · ${n} tiempo${n === 1 ? '' : 's'}`; }
   else $('ticker').innerHTML = 'Esperando el primer tiempo';

@@ -195,17 +195,18 @@
     });
     return out;
   }
-  /* ---------- formato (todo en segundos) ---------- */
+  /* ---------- formato (todo en segundos; los tiempos llevan el símbolo " de segundos) ---------- */
+  const UNIT = '"';
   function decs(s) { const r = Math.round(s * 1000) / 1000; return Math.abs(r - Math.round(r * 10) / 10) > 0.0005 ? 3 : 1; }
   function fmt(s, o) {
     if (s == null) return '—'; if (s === 999) return 'Ab.';
     const d = o && o.d != null ? o.d : decs(s);
     const [i, f] = Math.abs(s).toFixed(d).split('.');
-    return (s < 0 ? '-' : '') + i.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (f ? ',' + f : '');
+    return (s < 0 ? '-' : '') + i.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (f ? ',' + f : '') + (o && o.u === false ? '' : UNIT);
   }
-  function fmmss(s) { const d = decs(s), mm = Math.floor(s / 60 + 1e-9), r = s - mm * 60; return mm + ':' + r.toFixed(d).replace('.', ',').padStart(3 + d, '0'); }
-  const fdif = s => s == null ? '' : (s < 0.0005 ? '±0,0' : '+' + fmt(s));
-  const fpen = s => (Math.abs(s - Math.round(s)) < 1e-9 ? String(Math.round(s)) : fmt(s)) + ' s';
+  function fmmss(s) { const d = decs(s), mm = Math.floor(s / 60 + 1e-9), r = s - mm * 60; return mm + "'" + r.toFixed(d).replace('.', ',').padStart(3 + d, '0') + UNIT; }
+  const fdif = s => s == null ? '' : (s < 0.0005 ? '±0,0' + UNIT : '+' + fmt(s));
+  const fpen = s => (Math.abs(s - Math.round(s)) < 1e-9 ? String(Math.round(s)) + UNIT : fmt(s));
   const ord = n => n + 'º';
   const catShort = c => c === R1 ? 'R1' : c === 'Rally2' ? 'R2' : String(c).slice(0, 3);
   const catCls = c => c === R1 ? 'R1' : 'R2';
