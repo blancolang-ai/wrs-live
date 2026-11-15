@@ -6,7 +6,7 @@ var UploaderCore = (function () {
   function badName(p) { var b = String(p).split('/').pop(); return /^~\$/.test(b) || /^\./.test(b) || !/\.xlsx$/i.test(b); }
   function summary(r) {
     var d = r.data, last = null;
-    d.tramos.forEach(function (t) { if (d.pilotos.some(function (p) { return p.t[t.id]; })) last = t.id; });
+    d.tramos.forEach(function (t) { if (d.pilotos.some(function (p) { return p.t[t.id] && p.t[t.id][0] !== 0; })) last = t.id; });
     return d.rally + ' · ' + (last ? 'hasta ' + last : 'sin tiempos') + ' · ' + r.times + ' tiempos · ' + d.pilotos.length + ' pilotos';
   }
   function newState(path) { return { path: path, seen: null, stableAt: null, sentHash: null, pending: null, warnKey: null, nextTry: 0, lastErr: null, uploads: 0, sheet: null }; }

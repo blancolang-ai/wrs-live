@@ -39,7 +39,7 @@ function sheet({ tcs = [['TC1 Uno 10 km', 'TC2 Dos 5 km'], ['TC3 Tres 8 km (Made
         const tm = cell && cell(si, ti, d) !== undefined ? cell(si, ti, d) : 100 + d + ti;
         const cN = d === 2 && ti === 0 ? 1 : 0, tN = 0;
         times.push(tm, cN, tN);
-        if (typeof tm === 'number' && tm > 0 && tm !== 999) acc[d] = (acc[d] || 0) + cN + tN;
+        if (tm !== 999) acc[d] = (acc[d] || 0) + cN + tN;
       });
       const r = [k + 1, d, n, 'Coche X', ...(withCat ? [c] : []), '33/90', acc[d] || 0, ...times];
       r.push(0, 0, d === 7 && si === 0 ? 5 : 0); rows.push(r);
@@ -260,4 +260,23 @@ test('temporada: sin fecha ni pestaña ni encabezado no se añade el campo', () 
   const { data } = P.parse(book(rows));
   assert.equal(data.date, '');
   assert.equal(data.season, undefined);
+});
+test('tramo sin tiempo pero con C/T: se sube como [0, C, T] (cuenta para incidencias y abandono, sin 999)', () => {
+  const rows = sheet({
+    tcs: [['TC1 Uno 10 km', 'TC2 Dos 5 km', 'TC3 Tres 8 km', 'TC4 Cuatro 6 km']],
+    days: [1],
+    cell: (si, ti, d) => (d === 1 && ti >= 2 ? null : d === 7 && ti === 3 ? null : undefined)
+  });
+  // Ana (fila 6): 1 C en TC1 y TC2 (con tiempo) y 2 T en TC4 (sin tiempo) → 4ª en TC4 sin tiempo: abandono, sin aviso de «tiempo con la 4ª»
+  rows[6][8] = 1; rows[6][11] = 1; rows[6][18] = 2; rows[6][6] = 4;
+  // Ciro (fila 8): 1 C en TC4 sin tiempo (no llega a 4) → [0, 1, 0]
+  rows[8][17] = 1; rows[8][6] = 1;
+  const { data, warnings, times } = P.parse(book(rows));
+  const ana = data.pilotos.find(p => p.dorsal === 1), ciro = data.pilotos.find(p => p.dorsal === 7);
+  assert.equal(ana.t.TC3, undefined);                  // sin tiempo ni C/T: nada
+  assert.deepEqual(ana.t.TC4, [0, 0, 2]);
+  assert.deepEqual(ciro.t.TC4, [0, 1, 0]);
+  assert.ok(!warnings.some(w => /4ª incidencia|incidencias acumuladas/.test(w)), warnings.join(' | '));
+  // los tramos de solo incidencias no cuentan como tiempos
+  assert.equal(times, 3 * 4 - 2 - 1);
 });

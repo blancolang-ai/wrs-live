@@ -316,7 +316,9 @@ sub fit_worker {
       my $a = $src->{$k};
       my $t0 = as_num($a->[0]); next unless defined $t0;
       my $c = as_num($a->[1]); my $te = as_num($a->[2]);
-      $t{$k} = [ $t0, defined $c ? int(($c >= 0 ? $c : 0) + 0.5) : 0, defined $te ? int(($te >= 0 ? $te : 0) + 0.5) : 0 ];
+      my $cc = defined $c ? int(($c >= 0 ? $c : 0) + 0.5) : 0; my $tt = defined $te ? int(($te >= 0 ? $te : 0) + 0.5) : 0;
+      next if $t0 == 0 && !$cc && !$tt;    # 0 = sin tiempo: solo vale si lleva incidencias
+      $t{$k} = [ $t0, $cc, $tt ];
     }
     my @pen;
     if (ref($p->{pen}) eq 'ARRAY') {
@@ -710,8 +712,12 @@ sub parse {
       $p->{pen}[$si] = round3($d->{pen} || 0);
       for my $x (0 .. $#ids) {
         my $tv = $d->{t}[$x];
+        my $c = int(($tv->[1] || 0) + (($tv->[1] || 0) >= 0 ? 0.5 : -0.5));
+        my $te = int(($tv->[2] || 0) + (($tv->[2] || 0) >= 0 ? 0.5 : -0.5));
         if (defined $tv->[0] && $tv->[0] > 0) {
-          $p->{t}{ $ids[$x] } = [ round3($tv->[0]), int(($tv->[1] || 0) + (($tv->[1] || 0) >= 0 ? 0.5 : -0.5)), int(($tv->[2] || 0) + (($tv->[2] || 0) >= 0 ? 0.5 : -0.5)) ];
+          $p->{t}{ $ids[$x] } = [ round3($tv->[0]), $c, $te ];
+        } elsif ($c > 0 || $te > 0) {
+          $p->{t}{ $ids[$x] } = [ 0, $c, $te ];    # sin tiempo pero con C/T: cuentan para las incidencias y el abandono
         }
       }
       if (defined $d->{excelAcc}) {
@@ -737,6 +743,7 @@ sub parse {
       next if !$tv;
       $acc += ($tv->[1] || 0) + ($tv->[2] || 0);
       last if $tv->[0] == 999;
+      last if $acc >= 4 && $tv->[0] == 0;
       if ($acc >= 4) {
         push @warn, 'Dorsal ' . $p->{dorsal} . ': tiempo en ' . $tid . ' con la 4ª incidencia (abandono); la web no lo cuenta';
         last;
@@ -768,7 +775,7 @@ sub parse {
     }
   }
   my $times = 0;
-  for my $p (@pilotos) { $times += scalar keys %{ $p->{t} }; }
+  for my $p (@pilotos) { $times += scalar grep { $_->[0] != 0 } values %{ $p->{t} }; }
   push @warn, 'La hoja no tiene tiempos todavía' unless $times;
 
   my @wd = ('LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM');
@@ -801,7 +808,7 @@ sub parse {
   $data->{season} = 0 + $season if defined $season;
   fit_worker($data, \@warn);
   my $times2 = 0;
-  for my $p (@{ $data->{pilotos} }) { $times2 += scalar keys %{ $p->{t} }; }
+  for my $p (@{ $data->{pilotos} }) { $times2 += scalar grep { $_->[0] != 0 } values %{ $p->{t} }; }
   $times = $times2;
   return { data => $data, warnings => \@warn, sheet => $sheet->{name}, times => 0 + $times };
 }

@@ -102,7 +102,7 @@ sub summary {
   my $last;
   for my $t (@{ $d->{tramos} }) {
     my $id = $t->{id};
-    if (grep { $_->{t}{$id} } @{ $d->{pilotos} }) { $last = $id; }
+    if (grep { $_->{t}{$id} && $_->{t}{$id}[0] != 0 } @{ $d->{pilotos} }) { $last = $id; }
   }
   return $d->{rally} . ' · ' . ($last ? 'hasta ' . $last : 'sin tiempos') . ' · ' . $r->{times} . ' tiempos · ' . scalar(@{ $d->{pilotos} }) . ' pilotos';
 }

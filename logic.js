@@ -14,7 +14,9 @@
     const DL = data.dayLabels && data.dayLabels.length === ndays ? data.dayLabels : DAYS.map((d, i) => ({ short: 'D' + (i + 1), long: 'Día ' + (i + 1) }));
     return { data, T, P, SEC, DAYS, CATS, byD, tIdx, ABI, DL, cache: new Map() };
   }
-  /* Primer tramo (en orden) con 999 o en el que C+T acumulados llegan a 4. */
+  /* Un tramo puede venir como [0, C, T]: sin tiempo pero con incidencias. Esas C/T cuentan para el acumulado
+     y para el abandono (con la 4ª se abandona en ese tramo, sin necesidad de poner 999), pero el tiempo sigue pendiente. */
+  /* Primer tramo (en orden) con 999 o en el que C+T acumulados llegan a 4 (también en un tramo sin tiempo). */
   function abandonIndex(T, p) {
     let acc = 0;
     for (let ti = 0; ti < T.length; ti++) {
@@ -30,7 +32,16 @@
     const ab = m.ABI[p.dorsal];
     if (ab != null && ti > ab) return null;
     if (ab != null && ti === ab) return [999, incCount(v[1]), incCount(v[2])];
+    if (v[0] === 0) return null; // solo incidencias: el tiempo sigue pendiente
     return v;
+  }
+  /* C y T registrados en el tramo ti (con o sin tiempo); nada después del abandono. */
+  function incRaw(m, p, ti) {
+    const v = p.t[m.T[ti].id]; if (!v) return null;
+    const ab = m.ABI[p.dorsal];
+    if (ab != null && ti > ab) return null;
+    const c = incCount(v[1]), t = incCount(v[2]);
+    return c || t ? { c, t } : null;
   }
   const vis = (m, ti, d) => !!raw(m, m.byD[d], ti);
   const dayOfSec = (m, s) => m.SEC[s].day;
@@ -39,10 +50,9 @@
   /* C y T acumulados hasta el tramo «limit» (misma regla que el total de tiempos). */
   function incAcc(m, p, limit = m.T.length - 1) {
     let c = 0, t = 0;
-    for (let ti = 0; ti <= limit; ti++) {
-      const v = raw(m, p, ti); if (!v) continue;
-      c += incCount(v[1]); t += incCount(v[2]);
-      if (v[0] === 999) break;
+    for (let ti = 0; ti <= Math.min(limit, m.T.length - 1); ti++) {
+      const x = incRaw(m, p, ti); if (x) { c += x.c; t += x.t; }
+      const v = raw(m, p, ti); if (v && v[0] === 999) break;
     }
     return { c, t };
   }
@@ -99,7 +109,7 @@
     return any;
   }
   function curTramo(m) { for (let ti = m.T.length - 1; ti >= 0; ti--) if (m.P.some(p => vis(m, ti, p.dorsal))) return ti; return 0; }
-  const hasTimes = m => m.P.some(p => Object.keys(p.t).length > 0);
+  const hasTimes = m => m.P.some(p => Object.values(p.t).some(v => v && v[0] !== 0));
   /* Índices de tramos con al menos un tiempo (o abandono), en orden de carrera. */
   function tramosWithTimes(m) {
     const out = [];
@@ -110,18 +120,20 @@
   const isLive = m => hasTimes(m) && !tramoComplete(m, curTramo(m));
 
   /* clasificación hasta el tramo «limit» (incluido) */
-  function standings(m, limit = m.T.length - 1) {
-    const key = 'st' + limit; if (m.cache.has(key)) return m.cache.get(key).map(r => ({ ...r }));
+  /* incLimit: hasta qué tramo se suman las incidencias (en directo, todas las subidas aunque ese tramo aún no tenga tiempos). */
+  function standings(m, limit = m.T.length - 1, incLimit = limit) {
+    const key = 'st' + limit + '/' + incLimit; if (m.cache.has(key)) return m.cache.get(key).map(r => ({ ...r }));
     const rows = m.P.map(p => {
       let n = 0, tot = 0, ab = null, last = null, pen = 0, incC = 0, incT = 0;
       const secTouched = new Set();
       for (let ti = 0; ti <= limit; ti++) {
         const v = raw(m, p, ti); if (!v) continue;
-        incC += incCount(v[1]); incT += incCount(v[2]);
         if (v[0] === 999) { if (ab == null) ab = ti; continue; }
         if (ab != null) continue;
         n++; tot += v[0]; last = ti; secTouched.add(m.T[ti].sec);
       }
+      const acc = incAcc(m, p, Math.max(limit, incLimit)); incC = acc.c; incT = acc.t;
+      if (ab == null && incLimit > limit) { const a = m.ABI[p.dorsal]; if (a != null && a <= incLimit) ab = a; }
       secTouched.forEach(s => pen += p.pen[s] || 0);
       tot = Math.round((tot + pen) * 1000) / 1000;
       return { p, n, tot, ab, last, pen, incC, incT };
@@ -201,7 +213,7 @@
     const om = Object.fromEntries(oldData.pilotos.map(p => [p.dorsal, p])), out = [];
     newData.pilotos.forEach(p => {
       const o = om[p.dorsal];
-      newData.tramos.forEach((t, ti) => { const a = o && o.t[t.id], b = p.t[t.id]; if (b && JSON.stringify(a) !== JSON.stringify(b)) out.push({ d: p.dorsal, ti }); });
+      newData.tramos.forEach((t, ti) => { const a = o && o.t[t.id], b = p.t[t.id]; if (b && JSON.stringify(a) !== JSON.stringify(b) && (b[0] !== 0 || abandonIndex(newData.tramos, p) === ti)) out.push({ d: p.dorsal, ti }); });
       if (o && JSON.stringify(o.pen) !== JSON.stringify(p.pen)) out.push({ d: p.dorsal, ti: null });
     });
     return out;
@@ -222,6 +234,6 @@
   const catShort = c => c === R1 ? 'R1' : c === 'Rally2' ? 'R2' : String(c).slice(0, 3);
   const catCls = c => c === R1 ? 'R1' : 'R2';
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
-  const api = { model, vis, raw, abandonIndex, tramoComplete, curTramo, hasTimes, tramosWithTimes, isFinal, isLive, standings, withDiffs, tramoResults, startOrder, expectedOrder, changes, incCount, incBadges, incAcc, ABANDON_INC, atLimit, rowAtLimit, incLabel, generalAfter, posGain, scratchRanking, decs, fmt, fmmss, fdif, fpen, ord, catShort, catCls, esc, dayOfSec };
+  const api = { model, vis, raw, abandonIndex, tramoComplete, curTramo, hasTimes, tramosWithTimes, isFinal, isLive, standings, withDiffs, tramoResults, startOrder, expectedOrder, changes, incCount, incBadges, incAcc, incRaw, ABANDON_INC, atLimit, rowAtLimit, incLabel, generalAfter, posGain, scratchRanking, decs, fmt, fmmss, fdif, fpen, ord, catShort, catCls, esc, dayOfSec };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.RD = api;
 })(typeof window !== 'undefined' ? window : globalThis);

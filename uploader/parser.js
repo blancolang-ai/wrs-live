@@ -144,7 +144,9 @@ var RallyParser = (function () {
         if (!ids[k] || !src[k]) return;
         var t0 = asNum(src[k][0]), c = asNum(src[k][1]), te = asNum(src[k][2]);
         if (t0 == null) return;
-        t[k] = [t0, c == null ? 0 : Math.max(0, Math.round(c)), te == null ? 0 : Math.max(0, Math.round(te))];
+        var cc = c == null ? 0 : Math.max(0, Math.round(c)), tt = te == null ? 0 : Math.max(0, Math.round(te));
+        if (t0 === 0 && !cc && !tt) return; // 0 = sin tiempo: solo vale si lleva incidencias
+        t[k] = [t0, cc, tt];
       });
       var pen = Array.isArray(p.pen) ? p.pen.map(function (x) { var n = asNum(x); return n == null ? 0 : n; }) : [];
       if (pen.length > 20) pen = pen.slice(0, 20);
@@ -351,7 +353,11 @@ var RallyParser = (function () {
         if (d.nombre.toLowerCase() !== p.nombre.toLowerCase()) warn.push('Dorsal ' + d.dorsal + ': «' + p.nombre + '» en la 1ª sección pero «' + d.nombre + '» en ' + name);
         if (!p.cat && d.cat) p.cat = d.cat;
         p.pen[si] = round3(d.pen || 0);
-        ids.forEach(function (tid, x) { var tv = d.t[x]; if (tv[0] !== null && tv[0] > 0) p.t[tid] = [round3(tv[0]), Math.round(tv[1] || 0), Math.round(tv[2] || 0)]; });
+        ids.forEach(function (tid, x) {
+          var tv = d.t[x], c = Math.round(tv[1] || 0), te = Math.round(tv[2] || 0);
+          if (tv[0] !== null && tv[0] > 0) p.t[tid] = [round3(tv[0]), c, te];
+          else if (c > 0 || te > 0) p.t[tid] = [0, c, te]; // sin tiempo pero con C/T: cuentan para las incidencias y el abandono
+        });
         if (d.excelAcc != null) {
           var calc = 0;
           Object.keys(p.t).forEach(function (tid) {
@@ -371,7 +377,8 @@ var RallyParser = (function () {
         if (!tv) continue;
         acc += (tv[1] || 0) + (tv[2] || 0);
         if (tv[0] === 999) break;
-        if (acc >= 4) { warn.push('Dorsal ' + p.dorsal + ': tiempo en ' + tid + ' con la 4ª incidencia (abandono); la web no lo cuenta'); break; }
+        if (acc >= 4 && tv[0] !== 0) { warn.push('Dorsal ' + p.dorsal + ': tiempo en ' + tid + ' con la 4ª incidencia (abandono); la web no lo cuenta'); break; }
+        if (acc >= 4) break;
       }
     });
     if (outT.length && !outT.some(function (t) { return t.ps; })) warn.push('Ningún tramo marcado como POWER STAGE');
@@ -383,7 +390,7 @@ var RallyParser = (function () {
       var sinCat = pilotos.filter(function (p) { return !p.cat; });
       if (sinCat.length) { warn.push('Sin categoría: ' + sinCat.map(function (p) { return p.nombre; }).join(', ') + ' (se pone Rally1)'); sinCat.forEach(function (p) { p.cat = 'Rally1'; }); if (cats.indexOf('Rally1') < 0) cats.unshift('Rally1'); }
     }
-    var times = 0; pilotos.forEach(function (p) { times += Object.keys(p.t).length; });
+    var times = 0; pilotos.forEach(function (p) { Object.keys(p.t).forEach(function (k) { if (p.t[k][0] !== 0) times++; }); });
     if (!times) warn.push('La hoja no tiene tiempos todavía');
     var wd = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'], wdl = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
     var meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -398,7 +405,7 @@ var RallyParser = (function () {
     };
     if (season) data.season = season;
     fitWorker(data, warn);
-    times = 0; data.pilotos.forEach(function (p) { times += Object.keys(p.t).length; });
+    times = 0; data.pilotos.forEach(function (p) { Object.keys(p.t).forEach(function (k) { if (p.t[k][0] !== 0) times++; }); });
     return { data: data, warnings: warn, sheet: sheet.name, times: times };
   }
   return { parse: parse, readSheet: readSheet, parseTramo: parseTramo, pickLiveSheet: pickLiveSheet, foldName: foldName, parseDorsal: parseDorsal };

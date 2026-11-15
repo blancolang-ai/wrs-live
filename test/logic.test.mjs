@@ -298,3 +298,53 @@ test('scratch absoluto en directo (provisional): R1 sin scratch mientras un R2 t
   m = L.model(d2);
   assert.deepEqual(L.tramoResults(m, 0).res.filter(r => r.scratch).map(r => r.p.dorsal).sort((a, b) => a - b), [2, 11]);
 });
+test('incidencias en un tramo sin tiempo: cuentan para el acumulado, «Al límite» y el abandono (sin 999)', () => {
+  // TC1–TC3 con tiempos para todos; TC4 solo con incidencias (nadie tiene tiempo aún)
+  const d = synth({ upTo: 3 }); const P = Object.fromEntries(d.pilotos.map(p => [p.dorsal, p]));
+  P[1].t.TC1[1] = 1; P[1].t.TC2[1] = 1;   // Alfa: 2 C con tiempo…
+  P[1].t.TC4 = [0, 0, 2];                  // …y 2 T en TC4 sin tiempo → 4ª: abandono en TC4
+  P[11].t.TC4 = [0, 1, 0];                 // Delta: 1 C en TC4 sin tiempo (no abandona)
+  P[12].t.TC2[2] = 2; P[12].t.TC4 = [0, 1, 0]; // Eco: 2 T con tiempo + 1 C sin tiempo → 3: al límite
+  const m = L.model(d);
+  // abandono de Alfa en TC4, conservando sus tiempos anteriores
+  assert.equal(m.ABI[1], 3);
+  assert.deepEqual(L.raw(m, P[1], 3), [999, 0, 2]);
+  assert.equal(L.raw(m, P[1], 2)[0] > 0, true);
+  // Delta y Eco: TC4 sigue pendiente (sin tiempo), pero sus C/T cuentan
+  assert.equal(L.raw(m, P[11], 3), null); assert.equal(L.vis(m, 3, 11), false);
+  assert.deepEqual(L.incRaw(m, P[11], 3), { c: 1, t: 0 });
+  assert.deepEqual(L.incAcc(m, P[12]), { c: 1, t: 2 });
+  // clasificación final (todas las incidencias)
+  const st = L.standings(m), row = dd => st.find(r => r.p.dorsal === dd);
+  assert.equal(row(1).ab, 3); assert.equal(row(1).n, 3);
+  assert.equal(row(11).ab, null); assert.equal(row(11).incC, 1); assert.equal(row(11).n, 3);
+  assert.equal(L.rowAtLimit(row(12)), true);
+  // «Ver tras TC3»: las C/T de TC4 aún no cuentan…
+  const tras3 = L.standings(m, 2), r3 = dd => tras3.find(r => r.p.dorsal === dd);
+  assert.equal(r3(1).ab, null); assert.equal(r3(1).incC + r3(1).incT, 2);
+  assert.equal(L.rowAtLimit(r3(12)), false);
+  // …pero en directo (incLimit = último tramo) cuentan en cuanto se suben
+  const live = L.standings(m, 2, m.T.length - 1), rl = dd => live.find(r => r.p.dorsal === dd);
+  assert.equal(L.rowAtLimit(rl(12)), true); assert.equal(rl(11).incC, 1);
+  // TC4 aparece como tramo con «tiempos» solo por el abandono de Alfa (Ab.), no por las C/T sueltas
+  assert.deepEqual(L.tramosWithTimes(m), [0, 1, 2, 3]);
+  assert.equal(L.tramoComplete(m, 3), false);
+  const tr4 = L.tramoResults(m, 3);
+  assert.equal(tr4.done.length, 0); assert.equal(tr4.res.filter(r => r.scratch).length, 0);
+  // los cambios: Delta y Eco (solo C/T) no generan «último tiempo»; el abandono de Alfa sí
+  const old = synth({ upTo: 3 }); old.pilotos.forEach(p => { p.t = JSON.parse(JSON.stringify(d.pilotos.find(q => q.dorsal === p.dorsal).t)); delete p.t.TC4; });
+  assert.deepEqual(L.changes(old, d).map(c => c.d + ':' + c.ti), ['1:3']);
+});
+test('incidencias sin tiempo que no llegan a 4: el tiempo queda pendiente y luego se completa con normalidad', () => {
+  const d = synth({ upTo: 2 }); const P = Object.fromEntries(d.pilotos.map(p => [p.dorsal, p]));
+  P[2].t.TC3 = [0, 1, 0];                  // Bravo: C en TC3 antes de tener tiempo
+  let m = L.model(d);
+  assert.equal(L.hasTimes(m), true); assert.equal(L.curTramo(m), 1);
+  assert.equal(L.vis(m, 2, 2), false);
+  P[2].t.TC3 = [104, 1, 0];                // llega el tiempo
+  m = L.model(d);
+  assert.equal(L.vis(m, 2, 2), true); assert.equal(L.incAcc(m, P[2]).c, 2); // TC2 ya traía 1 C en los datos sintéticos
+  // [0,0,0] sin incidencias no aporta nada
+  const d2 = synth({ upTo: 1 }); d2.pilotos[0].t.TC2 = [0, 0, 0];
+  const m2 = L.model(d2); assert.equal(L.incRaw(m2, d2.pilotos[0], 1), null); assert.equal(L.vis(m2, 1, d2.pilotos[0].dorsal), false);
+});

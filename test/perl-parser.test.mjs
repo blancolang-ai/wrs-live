@@ -85,7 +85,7 @@ function sheet({ tcs = [['TC1 Uno 10 km', 'TC2 Dos 5 km'], ['TC3 Tres 8 km (Made
         const tm = cell && cell(si, ti, d) !== undefined ? cell(si, ti, d) : 100 + d + ti;
         const cN = d === 2 && ti === 0 ? 1 : 0, tN = 0;
         times.push(tm, cN, tN);
-        if (typeof tm === 'number' && tm > 0 && tm !== 999) acc[d] = (acc[d] || 0) + cN + tN;
+        if (tm !== 999) acc[d] = (acc[d] || 0) + cN + tN;
       });
       const r = [k + 1, d, n, 'Coche X', ...(withCat ? [c] : []), '33/90', acc[d] || 0, ...times];
       r.push(0, 0, d === 7 && si === 0 ? 5 : 0); rows.push(r);
@@ -256,4 +256,17 @@ test('Perl = JS: temporada por fecha, pestaña del libro y encabezado de la hoja
   ({ js, pl } = compare(noDate));
   assert.equal(js.data.season, undefined);
   assert.deepEqual(pl.data, js.data);
+});
+test('Perl = JS: tramo sin tiempo pero con C/T → [0, C, T], sin aviso y fuera del recuento de tiempos', () => {
+  const rows = sheet({
+    tcs: [['TC1 Uno 10 km', 'TC2 Dos 5 km', 'TC3 Tres 8 km', 'TC4 Cuatro 6 km']],
+    days: [1],
+    cell: (si, ti, d) => (d === 1 && ti >= 2 ? null : d === 7 && ti === 3 ? null : undefined)
+  });
+  rows[6][8] = 1; rows[6][11] = 1; rows[6][18] = 2; rows[6][6] = 4;
+  rows[8][17] = 1; rows[8][6] = 1;
+  const { js } = compare(rows);
+  assert.deepEqual(js.data.pilotos.find(p => p.dorsal === 1).t.TC4, [0, 0, 2]);
+  assert.deepEqual(js.data.pilotos.find(p => p.dorsal === 7).t.TC4, [0, 1, 0]);
+  assert.equal(js.times, 9);
 });

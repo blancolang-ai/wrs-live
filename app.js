@@ -66,7 +66,8 @@ function renderClas() {
   else if (L.hasTimes(M)) { const n = M.P.filter(p => L.vis(M, ct, p.dorsal)).length; $('ticker').innerHTML = `<b>${Tt[ct].id}</b> · ${n} tiempo${n === 1 ? '' : 's'}`; }
   else $('ticker').innerHTML = 'Esperando el primer tiempo';
 
-  const now = L.standings(M, lim);
+  // En directo, las C/T de un tramo sin tiempo cuentan en cuanto se suben (aunque ese tramo aún no tenga tiempos).
+  const now = L.standings(M, lim, S.after == null ? Tt.length - 1 : lim);
   const refT = Math.min(lim, ct);
   const prev = refT > 0 ? L.standings(M, refT - 1) : null;
   const prevPos = prev ? Object.fromEntries(prev.map(r => [r.p.dorsal, posOf(r)])) : {};
@@ -160,7 +161,7 @@ function renderTramo() {
       <div class="dif num">${i === 0 ? '<span class="dp lead">—</span>' : `<span class="dp">${fdif(r.tm - done[i - 1].tm)}</span>${i > 1 ? `<small>1º ${fdif(r.tm - best)}</small>` : ''}`}</div>
       <div class="gral">${ord(gp)}${ch}</div></div>`;
   }).join('');
-  h += pend.map((r, i) => `<div class="row ${catCls(r.p.cat)}" data-d="${r.p.dorsal}"><div class="pos pend">–</div><div class="dor" style="opacity:.55">${r.p.dorsal}</div><div class="nm" style="color:#8a93a0">${esc(r.p.nombre)}</div><div class="slot" style="text-align:right;${i === 0 && isCur && done.length ? 'color:var(--accent);font-weight:700;font-style:normal' : ''}">${i === 0 && isCur && done.length ? '● en tramo' : 'por salir'}</div><div></div><div></div></div>`).join('');
+  h += pend.map((r, i) => `<div class="row ${catCls(r.p.cat)}" data-d="${r.p.dorsal}"><div class="pos pend">–</div><div class="dor" style="opacity:.55">${r.p.dorsal}</div><div class="nm" style="color:#8a93a0">${esc(r.p.nombre)}</div><div class="slot" style="text-align:right;${i === 0 && isCur && done.length ? 'color:var(--accent);font-weight:700;font-style:normal' : ''}">${i === 0 && isCur && done.length ? '● en tramo' : 'por salir'}${(ir => ir ? tags(ir) : '')(L.incRaw(M, r.p, ti))}</div><div></div><div></div></div>`).join('');
   h += abs.map(r => `<div class="row ab ${catCls(r.p.cat)}" data-d="${r.p.dorsal}"><div class="pos">–</div><div class="dor">${r.p.dorsal}</div><div class="nm">${esc(r.p.nombre)}</div><div class="tm" style="color:#9aa2ad">Ab.${(r.v && M.ABI[r.p.dorsal] === ti) ? tags(r) : ''}</div><div></div><div class="gral" style="color:#9aa2ad;font-size:11px">${T()[M.ABI[r.p.dorsal]].id}</div></div>`).join('');
   $('tramo').innerHTML = h;
 }
@@ -219,7 +220,7 @@ function renderPil() {
     let sum = 0, any = false;
     const cells = s.tramos.map(id => {
       const ti = M.tIdx[id], x = L.tramoResults(M, ti).res.find(z => z.p.dorsal === S.pil);
-      if (!x.v) return `<div class="cell na"><div class="ci"><span>${esc(id)}</span></div><div class="cv">—</div><div class="cp">&nbsp;</div></div>`;
+      if (!x.v) { const ir = L.incRaw(M, p, ti); return `<div class="cell na"><div class="ci"><span>${esc(id)}</span>${ir ? `<span>${tags(ir)}</span>` : ''}</div><div class="cv">—</div><div class="cp">&nbsp;</div></div>`; }
       if (x.tm === 999) return `<div class="cell"><div class="ci"><span>${esc(id)}</span><span>${tags(x)}</span></div><div class="cv" style="color:#9aa2ad">Ab.</div><div class="cp">&nbsp;</div></div>`;
       sum += x.tm; any = true;
       const nowP = L.generalAfter(M, S.pil, ti), prevP = ti > 0 ? L.generalAfter(M, S.pil, ti - 1) : null, dg = L.posGain(prevP, nowP);
