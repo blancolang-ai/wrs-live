@@ -6,7 +6,7 @@ const API = (window.RD_API || '').replace(/\/$/, '');
 const POLL_MS = 10000;
 let M = null, DATA = null, VERSION = null, AT = null;
 
-const S = { view: 'clas', cat: 'all', after: null, ti: null, tiManual: false, day: 1, pil: null, archive: null,
+const S = { view: 'clas', cat: 'all', after: null, ti: null, tiManual: false, day: 0, pil: null, archive: null,
   favs: new Set((() => { try { return JSON.parse(localStorage.getItem('rd-favs') || '[]'); } catch { return []; } })()) };
 const fcat = r => S.cat === 'all' || r.p.cat === S.cat;
 const posOf = r => S.cat === 'all' ? r.pos : r.cpos;
@@ -166,11 +166,28 @@ function renderTramo() {
   $('tramo').innerHTML = h;
 }
 
+function dayBtnLabel(i, nd) {
+  const dl = M.DL[i] || {};
+  if (nd > 2) return (dl.short || ('D' + (i + 1))) + ' · Día ' + (i + 1);
+  return dl.long || ('Día ' + (i + 1));
+}
 function renderSalida() {
   const nd = M.DAYS.length;
-  if (nd < 2) { $('daysel').innerHTML = ''; $('sstat').innerHTML = '<div>Este rally tiene un solo día: no hay orden de salida.</div>'; $('salida').innerHTML = ''; return; }
-  S.day = Math.max(1, Math.min(nd - 1, S.day));
-  $('daysel').innerHTML = M.DAYS.slice(1).map((d, i) => `<button data-day="${i + 1}" class="${S.day === i + 1 ? 'on' : ''}">${esc(M.DL[i + 1].long)}</button>`).join('');
+  S.day = Math.max(0, Math.min(nd - 1, S.day));
+  $('daysel').innerHTML = M.DAYS.map((_, i) => `<button data-day="${i}" class="${S.day === i ? 'on' : ''}">${esc(dayBtnLabel(i, nd))}</button>`).join('');
+  if (S.day === 0) {
+    $('sstat').innerHTML = '<div><span class="ok">✓ Orden</span> del Excel</div>';
+    const full = L.excelOrder(M);
+    const list = full.filter(d => S.cat === 'all' || M.byD[d].cat === S.cat);
+    let h = '<div class="grp X">orden del Excel</div>';
+    list.forEach(d => {
+      const p = M.byD[d];
+      const num = p.ord != null && isFinite(Number(p.ord)) ? Math.round(Number(p.ord)) : (full.indexOf(d) + 1);
+      h += `<div class="row ${catCls(p.cat)} ${S.favs.has(p.dorsal) ? 'fav' : ''}" data-d="${p.dorsal}"><div class="sn">${num}</div><div class="dor">${p.dorsal}</div><div class="nm">${esc(p.nombre)}</div><div class="gral" style="text-align:right;font-weight:600;color:var(--muted)">${esc(catShort(p.cat))}</div></div>`;
+    });
+    $('salida').innerHTML = h;
+    return;
+  }
   const so = L.startOrder(M, S.day), lastT = T()[so.limit].id;
   const groups = so.groups.filter(g => S.cat === 'all' || g.cat === S.cat), multi = M.CATS.length > 1;
   $('sstat').innerHTML = groups.map(g => {
@@ -305,7 +322,7 @@ function applyData(j) {
   else if (nw.some(c => c.ti !== S.ti)) { const tgt = lastNew.ti; toast(`Nuevo tiempo en ${M.T[tgt].id} · ver`, () => { S.ti = tgt; S.tiManual = false; S.view = 'tramo'; renderAll(); }); }
   // día del orden de salida: el próximo que va a empezar (salvo que el aficionado haya elegido otro)
   if (!sameRally) S.dayManual = false;
-  if (!S.dayManual) { const dc = L.dayOfSec(M, M.T[cur].sec), lastOfDay = M.DAYS[dc].secs.at(-1) === M.T[cur].sec && M.T.filter(t => t.sec === M.T[cur].sec).at(-1) === M.T[cur]; S.day = Math.max(1, Math.min(M.DAYS.length - 1, dc + (lastOfDay && L.tramoComplete(M, cur) ? 1 : 0))); }
+  if (!S.dayManual) { const dc = L.dayOfSec(M, M.T[cur].sec), lastOfDay = M.DAYS[dc].secs.at(-1) === M.T[cur].sec && M.T.filter(t => t.sec === M.T[cur].sec).at(-1) === M.T[cur]; S.day = Math.max(0, Math.min(M.DAYS.length - 1, dc + (lastOfDay && L.tramoComplete(M, cur) ? 1 : 0))); }
   renderAll();
   if (flashD.size) setTimeout(() => { flashD = new Set(); document.querySelectorAll('.row.flash').forEach(r => r.classList.remove('flash')); }, 2600);
 }

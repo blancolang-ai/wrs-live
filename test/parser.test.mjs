@@ -280,3 +280,15 @@ test('tramo sin tiempo pero con C/T: se sube como [0, C, T] (cuenta para inciden
   // los tramos de solo incidencias no cuentan como tiempos
   assert.equal(times, 3 * 4 - 2 - 1);
 });
+
+test('conserva el orden de las filas del Excel, ignora las que no tienen dorsal y asigna «ord»', () => {
+  const rows = sheet();
+  const ana = rows[6], bea = rows[7], ciro = rows[8];
+  const sin = [4, '', 'SinDorsal', 'Coche X', 'Rally1', '33/90', 0, 130, 0, 0, 131, 0, 0, 0, 0, 0];
+  rows.splice(6, 3, ciro, sin, ana, bea);
+  const { data, warnings } = P.parse(book(rows));
+  assert.deepEqual(data.pilotos.map(p => p.dorsal), [7, 1, 2]);
+  assert.deepEqual(data.pilotos.map(p => p.ord), [1, 2, 3]);
+  assert.equal(data.pilotos.find(p => p.nombre === 'SinDorsal'), undefined);
+  assert.ok(!warnings.some(w => /SinDorsal|sin dorsal|dorsal válido/i.test(w)));
+});

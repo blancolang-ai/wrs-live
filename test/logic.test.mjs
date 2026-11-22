@@ -359,3 +359,25 @@ test('incidencias sin tiempo que no llegan a 4: el tiempo queda pendiente y lueg
   const d2 = synth({ upTo: 1 }); d2.pilotos[0].t.TC2 = [0, 0, 0];
   const m2 = L.model(d2); assert.equal(L.incRaw(m2, d2.pilotos[0], 1), null); assert.equal(L.vis(m2, 1, d2.pilotos[0].dorsal), false);
 });
+
+test('primer día: el orden esperado es el del Excel (campo ord, o el de las filas si no viene)', () => {
+  const d = synth({ upTo: 1 });
+  const by = Object.fromEntries(d.pilotos.map(p => [p.dorsal, p]));
+  d.pilotos = [12, 3, 1, 11, 2].map(n => by[n]);
+  let m = L.model(d);
+  assert.deepEqual(L.excelOrder(m), [12, 3, 1, 11, 2]);
+  assert.deepEqual(L.expectedOrder(m, 0), [12, 3, 1, 11, 2]);
+  d.pilotos.forEach(p => { p.ord = { 12: 3, 3: 1, 1: 5, 11: 2, 2: 4 }[p.dorsal]; });
+  m = L.model(d);
+  assert.deepEqual(L.excelOrder(m), [3, 11, 12, 2, 1]);
+  assert.deepEqual(L.expectedOrder(m, 0), [3, 11, 12, 2, 1]);
+});
+
+test('el orden de salida del 2º día no cambia aunque los pilotos traigan «ord» del Excel', () => {
+  const d = synth({ upTo: 4 });
+  d.pilotos.forEach((p, i) => { p.ord = 10 - i; });
+  const m = L.model(d), so = L.startOrder(m, 1);
+  const r1 = L.standings(m, 3).filter(r => r.p.cat === 'Rally1').map(r => r.p.dorsal);
+  assert.deepEqual(so.groups[0].list.map(r => r.p.dorsal), [...r1].reverse());
+  assert.deepEqual(so.groups[1].list.map(r => r.p.dorsal), L.standings(m, 3).filter(r => r.p.cat === 'Rally2').map(r => r.p.dorsal));
+});

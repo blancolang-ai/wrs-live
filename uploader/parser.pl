@@ -325,7 +325,7 @@ sub fit_worker {
       for my $x (@{ $p->{pen} }) { my $n = as_num($x); push @pen, defined $n ? $n : 0; }
       @pen = @pen[0 .. 19] if @pen > 20;
     }
-    push @keep, { dorsal => 0 + $d, nombre => clip($nombre, 60), coche => clip($p->{coche} || '', 80), cat => (clip($p->{cat} || 'Rally1', 20) || 'Rally1'), t => \%t, pen => \@pen };
+    push @keep, { dorsal => 0 + $d, nombre => clip($nombre, 60), coche => clip($p->{coche} || '', 80), cat => (clip($p->{cat} || 'Rally1', 20) || 'Rally1'), t => \%t, pen => \@pen, ord => 0 + @keep + 1 };
   }
   if (@keep > 200) { push @$warn, 'Demasiados pilotos (' . scalar(@keep) . '); se suben los 200 primeros'; @keep = @keep[0 .. 199]; }
   $data->{pilotos} = \@keep;

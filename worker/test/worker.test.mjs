@@ -27,12 +27,13 @@ test('subida con forma incorrecta: 400/422, demasiado grande: 413', async () => 
   const big = synth(); big.rally = 'x'.repeat(300 * 1024); assert.equal((await up(big)).status, 413);
 });
 test('ida y vuelta: sube, lee, ETag/304, quita campos no previstos, borra', async () => {
-  const d = synth({ upTo: 3 }); d.pilotos[0].telefono = '600000000'; d.warnings = ['x']; d.pilotos[0].pesos = '33/90';
+  const d = synth({ upTo: 3 }); d.pilotos.forEach((p, i) => { p.ord = i + 1; }); d.pilotos[0].telefono = '600000000'; d.warnings = ['x']; d.pilotos[0].pesos = '33/90';
   const r = await up(d); assert.equal(r.status, 200); const j = await r.json(); assert.ok(j.ok && j.version >= 1);
   await wait(2100);
   const g = await get(); const body = await g.json(); const etag = g.headers.get('etag');
   assert.equal(body.live, true); assert.equal(body.version, j.version); assert.equal(body.data.rally, 'Rally Sintético');
   assert.deepEqual(body.data.pilotos[1].t, d.pilotos[1].t);
+  assert.equal(body.data.pilotos[0].ord, 1); assert.equal(body.data.pilotos[1].ord, 2);
   assert.equal(body.data.pilotos[0].telefono, undefined); assert.equal(body.data.pilotos[0].pesos, undefined); assert.equal(body.data.warnings, undefined);
   assert.equal((await get({ 'If-None-Match': etag })).status, 304);
   assert.equal(g.headers.get('access-control-expose-headers'), 'ETag');

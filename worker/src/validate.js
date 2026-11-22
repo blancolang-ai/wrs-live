@@ -32,10 +32,17 @@ export function sanitize(b) {
       if (!ids.has(k)) fail('tiempo en tramo desconocido ' + k);
       arr(v, 3, 'tiempo'); t[k] = [num(v[0], 'tiempo') ?? fail('tiempo vacío'), num(v[1], 'C') || 0, num(v[2], 'T') || 0];
     }
-    return {
+    const out = {
       dorsal: num(p.dorsal, 'dorsal') ?? fail('dorsal'), nombre: str(p.nombre, 60, 'nombre') || fail('nombre'), coche: str(p.coche, 80, 'coche') || '',
       cat: str(p.cat, 20, 'cat') || 'Rally1', t, pen: arr(p.pen || [], 20, 'pen').map(x => num(x, 'pen') || 0)
     };
+    if (p.ord != null && p.ord !== '') {
+      const o = num(p.ord, 'ord');
+      const oi = Math.round(o);
+      if (oi < 1 || oi > 200) fail('ord fuera de rango');
+      out.ord = oi;
+    }
+    return out;
   });
   if (new Set(pilotos.map(p => p.dorsal)).size !== pilotos.length) fail('dorsales repetidos');
   const season = seasonYear(b.season);

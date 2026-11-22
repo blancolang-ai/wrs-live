@@ -270,3 +270,13 @@ test('Perl = JS: tramo sin tiempo pero con C/T → [0, C, T], sin aviso y fuera 
   assert.deepEqual(js.data.pilotos.find(p => p.dorsal === 7).t.TC4, [0, 1, 0]);
   assert.equal(js.times, 9);
 });
+
+test('Perl = JS: orden de filas del Excel, sin dorsal ignorado, campo «ord»', () => {
+  const rows = sheet();
+  const ana = rows[6], bea = rows[7], ciro = rows[8];
+  const sin = [4, '', 'SinDorsal', 'Coche X', 'Rally1', '33/90', 0, 130, 0, 0, 131, 0, 0, 0, 0, 0];
+  rows.splice(6, 3, ciro, sin, ana, bea);
+  const { js } = compare(rows);
+  assert.deepEqual(js.data.pilotos.map(p => p.dorsal), [7, 1, 2]);
+  assert.deepEqual(js.data.pilotos.map(p => p.ord), [1, 2, 3]);
+});

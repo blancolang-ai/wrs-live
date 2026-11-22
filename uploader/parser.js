@@ -150,7 +150,7 @@ var RallyParser = (function () {
       });
       var pen = Array.isArray(p.pen) ? p.pen.map(function (x) { var n = asNum(x); return n == null ? 0 : n; }) : [];
       if (pen.length > 20) pen = pen.slice(0, 20);
-      keep.push({ dorsal: d, nombre: clip(nombre, 60), coche: clip(p.coche || '', 80), cat: clip(p.cat || 'Rally1', 20) || 'Rally1', t: t, pen: pen });
+      keep.push({ dorsal: d, nombre: clip(nombre, 60), coche: clip(p.coche || '', 80), cat: clip(p.cat || 'Rally1', 20) || 'Rally1', t: t, pen: pen, ord: keep.length + 1 });
     });
     if (keep.length > 200) { warn.push('Demasiados pilotos (' + keep.length + '); se suben los 200 primeros'); keep = keep.slice(0, 200); }
     data.pilotos = keep;

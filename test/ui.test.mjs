@@ -1,4 +1,4 @@
-// Comprobaciones de la interfaz 2.5.0 (textos y estilos en el código; datos sintéticos).
+// Comprobaciones de la interfaz 2.6.0 (textos y estilos en el código; datos sintéticos).
 import { test } from 'node:test'; import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -27,4 +27,12 @@ test('la diferencia con el líder es negra y algo mayor (13px, --ink)', () => {
   assert.match(rule, /color:var\(--ink\)/);
   assert.match(rule, /font:700 13px/);
   assert.match(html, /class="d1h">Dif\. 1º</);
+});
+
+test('Orden de salida incluye el primer día (orden del Excel), también si el rally tiene un solo día', () => {
+  assert.doesNotMatch(app, /Este rally tiene un solo día: no hay orden de salida/);
+  assert.match(app, /orden del Excel/);
+  assert.match(app, /S\.day === 0/);
+  assert.match(app, /excelOrder/);
+  assert.match(app, /Math\.max\(0,/);
 });

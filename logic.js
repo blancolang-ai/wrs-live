@@ -194,11 +194,22 @@
     }).sort((a, b) => (b.reverse - a.reverse) || (a.cat < b.cat ? -1 : 1));
     return { groups, ab: st.filter(r => r.ab != null), limit, secT, all: st };
   }
+  /* Orden del primer día (el de las filas del Excel). Si hay «ord», ese manda; si no, el array de pilotos
+     (el uploader ya lo emite en orden de filas). Sin esa pista no se reordena por dorsal. */
+  function excelOrder(m) {
+    const has = m.P.some(p => p.ord != null && isFinite(Number(p.ord)));
+    const list = has ? [...m.P].sort((a, b) => {
+      const ao = a.ord != null && isFinite(Number(a.ord)) ? Number(a.ord) : Infinity;
+      const bo = b.ord != null && isFinite(Number(b.ord)) ? Number(b.ord) : Infinity;
+      return ao - bo || a.dorsal - b.dorsal;
+    }) : [...m.P];
+    return list.map(p => p.dorsal);
+  }
   /* orden en que se espera que salgan al tramo (para listar los pendientes) */
   function expectedOrder(m, ti) {
     const day = dayOfSec(m, m.T[ti].sec);
     let order;
-    if (day === 0) order = [...m.P].sort((a, b) => (a.cat > b.cat ? 1 : a.cat < b.cat ? -1 : 0) || a.dorsal - b.dorsal).map(p => p.dorsal);
+    if (day === 0) order = excelOrder(m);
     else {
       const so = startOrder(m, day);
       order = [];
@@ -234,6 +245,6 @@
   const catShort = c => c === R1 ? 'R1' : c === 'Rally2' ? 'R2' : String(c).slice(0, 3);
   const catCls = c => c === R1 ? 'R1' : 'R2';
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
-  const api = { model, vis, raw, abandonIndex, tramoComplete, curTramo, hasTimes, tramosWithTimes, isFinal, isLive, standings, withDiffs, tramoResults, startOrder, expectedOrder, changes, incCount, incBadges, incAcc, incRaw, ABANDON_INC, atLimit, rowAtLimit, incLabel, generalAfter, posGain, scratchRanking, decs, fmt, fmmss, fdif, fpen, ord, catShort, catCls, esc, dayOfSec };
+  const api = { model, vis, raw, abandonIndex, tramoComplete, curTramo, hasTimes, tramosWithTimes, isFinal, isLive, standings, withDiffs, tramoResults, startOrder, expectedOrder, excelOrder, changes, incCount, incBadges, incAcc, incRaw, ABANDON_INC, atLimit, rowAtLimit, incLabel, generalAfter, posGain, scratchRanking, decs, fmt, fmmss, fdif, fpen, ord, catShort, catCls, esc, dayOfSec };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.RD = api;
 })(typeof window !== 'undefined' ? window : globalThis);
